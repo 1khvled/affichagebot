@@ -9,7 +9,7 @@ CHAT_ID = "1759675108"
 BASE_URL = f"https://api.telegram.org/bot{TOKEN}"
 SITE_URL = "https://medecine.univ-batna2.dz/affichage-des-notes"
 
-STATE_FILE = "C:\\Users\\Abdelli\\Desktop\\Projects\\AFFICHAGE\\bot_state.json"
+STATE_FILE = "bot_state.json"
 
 def get_updates(offset=None):
     url = f"{BASE_URL}/getUpdates"
