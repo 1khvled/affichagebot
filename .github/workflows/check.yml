@@ -1,10 +1,16 @@
 name: check-affichage
 
-# Free cron: runs the bot check every 10 minutes, no server needed.
-# State (subscriptions) is committed back to bot_state.json each run.
+# Free cron: runs the bot check ~every minute (5 staggered schedules,
+# each individually at GitHub's 5-min minimum). Shared concurrency group
+# serializes runs so they never overlap or double-reply.
+# State is committed back only when something actually changed.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0,5,10,15,20,25,30,35,40,45,50,55 * * * *"
+    - cron: "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
+    - cron: "4,9,14,19,24,29,34,39,44,49,54,59 * * * *"
   workflow_dispatch: # manual "Run workflow" button in the Actions tab (use to test)
 
 concurrency:
@@ -22,18 +28,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
       - run: pip install requests beautifulsoup4
       - name: Run one bot check
         run: python check.py
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      - name: Persist state (subscriptions / seen links + heartbeat)
+      - name: Persist state only if something changed (+12h heartbeat)
         run: |
           git config user.name "affichage-bot"
           git config user.email "affichage-bot@users.noreply.github.com"
-          date -u +%FT%TZ > .last_check
-          git add bot_state.json .last_check
-          git diff --cached --quiet || (git commit -m "update bot state [skip ci]" && git push)
+          NEED=""
+          git add bot_state.json
+          [ -n "$(git status --porcelain bot_state.json)" ] && NEED=1
+          if [ ! -f .last_check ] || [ $(( $(date +%s) - $(date -d "$(cat .last_check)" +%s) )) -gt 43200 ]; then
+            date -u +%FT%TZ > .last_check
+            git add .last_check
+            NEED=1
+          fi
+          if [ "$NEED" = 1 ]; then
+            git commit -m "update bot state [skip ci]"
+            git pull --rebase origin main && git push
+          else
+            echo "no changes, nothing to commit"
+          fi
       - name: Alert admin on failure
         if: failure()
         run: |

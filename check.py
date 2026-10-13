@@ -174,9 +174,9 @@ def main():
                     seen_links.add(link["url"])
                     new_found = True
                     time.sleep(1)
-    if new_found or state.get("seen_links", []) != list(seen_links):
-        state["seen_links"] = list(seen_links)
-    save_state(state)
+    if set(state.get("seen_links", [])) != seen_links:
+        state["seen_links"] = sorted(seen_links)
+        save_state(state)
     log.info("check done.")
 
 
