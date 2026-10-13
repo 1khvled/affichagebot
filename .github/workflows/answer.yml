@@ -1,9 +1,8 @@
-name: check-affichage
+name: answer
 
-# Free cron: runs the bot check ~every minute (5 staggered schedules,
-# each individually at GitHub's 5-min minimum). Shared concurrency group
-# serializes runs so they never overlap or double-reply.
-# State is committed back only when something actually changed.
+# FAST loop (~every minute, staggered schedules): answers users from the
+# repo cache (cache.json) - never touches the faculty site, so runs are
+# quick and never get blocked by it. Shared concurrency serializes runs.
 on:
   schedule:
     - cron: "0,5,10,15,20,25,30,35,40,45,50,55 * * * *"
@@ -11,16 +10,16 @@ on:
     - cron: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *"
     - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
     - cron: "4,9,14,19,24,29,34,39,44,49,54,59 * * * *"
-  workflow_dispatch: # manual "Run workflow" button in the Actions tab (use to test)
+  workflow_dispatch:
 
 concurrency:
   group: affichage-check
   cancel-in-progress: false
 
 jobs:
-  check:
+  answer:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
@@ -30,11 +29,11 @@ jobs:
           python-version: "3.11"
           cache: "pip"
       - run: pip install requests beautifulsoup4
-      - name: Run one bot check
+      - name: Answer users from cache
         run: python check.py
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
-      - name: Persist state only if something changed (+12h heartbeat)
+      - name: Persist state only if changed (+12h heartbeat)
         run: |
           git config user.name "affichage-bot"
           git config user.email "affichage-bot@users.noreply.github.com"
@@ -48,7 +47,7 @@ jobs:
           fi
           if [ "$NEED" = 1 ]; then
             git commit -m "update bot state [skip ci]"
-            git pull --rebase origin main && git push
+            git pull --rebase origin main && git push || (sleep 15; git pull --rebase origin main && git push)
           else
             echo "no changes, nothing to commit"
           fi
@@ -57,4 +56,4 @@ jobs:
         run: |
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
             -d chat_id=${{ secrets.ADMIN_CHAT_ID }} \
-            -d text="ALERTE: le check affichage a ECHOUE. Voir l'onglet Actions." > /dev/null
+            -d text="ALERTE: answer a ECHOUE. Voir l'onglet Actions." > /dev/null

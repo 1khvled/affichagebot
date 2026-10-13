@@ -8,7 +8,9 @@ Same logic as bot.py, but runs ONCE and exits:
 
 Needs BOT_TOKEN env var. Never prints it.
 """
+import json
 import logging
+import os
 import time
 
 import bot
@@ -29,6 +31,22 @@ from bot import (
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("affichagebot.cron")
+
+CACHE_FILE = os.environ.get("CACHE_FILE", "cache.json")
+
+
+def load_cache():
+    """Faculty data cached in the repo by the scrape workflow (every 5 min).
+    The answering loop never hits the faculty site itself -> fast + polite."""
+    try:
+        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+            c = json.load(f)
+        data = c.get("data", {})
+        log.info("cache loaded (%s): %d years", c.get("scraped_at", "?"), len(data))
+        return data
+    except Exception as e:
+        log.warning("no usable cache: %s", e)
+        return None
 
 
 def handle_update(item, state, cached_data):
@@ -135,9 +153,10 @@ def main():
         raise SystemExit("FATAL: BOT_TOKEN env var missing (GitHub secret BOT_TOKEN).")
     state = load_state()
 
-    cached_data = scrape_data()
+    cached_data = load_cache()
     if cached_data is None:
-        cached_data = {}
+        log.warning("no cache found, one live scrape as fallback")
+        cached_data = scrape_data() or {}
 
     if not state.get("seen_links") and cached_data:
         state["seen_links"] = [

@@ -1,0 +1,79 @@
+{
+ "data": {
+  "1ère Année": {
+   "Anatomie": [],
+   "Anglais": [],
+   "Biochimie": [],
+   "Biostatistiques  et Informatique": [],
+   "Chimie": [],
+   "Cytologie": [],
+   "Embryologie": [],
+   "Histologie": [],
+   "Physiologie": [],
+   "Physique /Biophysique": [],
+   "SSH": [
+    {
+     "text": "ssh_1.pdf",
+     "url": "http://medecine.univ-batna2.dz/sites/default/files/medecine/files/ssh_1.pdf"
+    }
+   ]
+  },
+  "2ème Année": {
+   "UEI: Appareil cardiovasculaire respiratoire et organes hémato-poiétique": [],
+   "UEI: Appareil digestif": [],
+   "UEI: Appareil endocrinien et de la reproduction": [],
+   "UEI: Appareil nerveux et organes des sens": [],
+   "UEI: Appareil urinaire": [],
+   "UET: Génétique": [],
+   "UET: Immunologie fondamentale": []
+  },
+  "3ème Année": {
+   "UEI1: Semiologie générale , psychologie médicale , appareil cardio-vasculaire": [],
+   "UEI2: Appareil neurologique , locomoteur et cutané": [],
+   "UEI3: Appareil endocrinien , appareil de reproduction et appareil urinaire": [],
+   "UEI4: Appareil digestif et organes hémato-poiétique": [],
+   "UET1: Anatomie et cytologie pathologique": [],
+   "UET2: Immunologie": [],
+   "UET3: Microbiologie médicale": [],
+   "UET4: Parasitologie mycologie": [],
+   "UET5: Pharmacologie clinique": []
+  },
+  "4ème Année": {
+   "* Cardiologie": [],
+   "Neurologie": [],
+   "Pneumologie": [
+    {
+     "text": "ct_pneumologie_0.pdf",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_pneumologie_0.pdf?m=1783605138"
+    }
+   ],
+   "Unité Gastro-Hépato - enterologie": [],
+   "Unité: Hémato-oncologie": [],
+   "Unité: Maladies infectieuses": []
+  },
+  "5ème Année": {
+   "Gynécologie - Obstétrique": [],
+   "Unité : Appareil locomoteur": [],
+   "Unité: Maladies métaboliques et endocrinologie": [],
+   "Unité: Pédiatrie": [],
+   "Unité: Santé Mentale": []
+  },
+  "6ème Année": {
+   "Dermatologie": [],
+   "Epidémiologie": [],
+   "Maladies Systémiques": [],
+   "Médecine légale": [
+    {
+     "text": "medecine_legale_2.pdf",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/medecine_legale_2.pdf?m=1782050775"
+    }
+   ],
+   "ORL": [],
+   "Ophtalmologie": [],
+   "Personnes âgés": [],
+   "Santé au travail et environnement": [],
+   "Urgence médicale": []
+  }
+ },
+ "scraped_at": "2026-10-13T23:59:55Z"
+}

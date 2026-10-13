@@ -1,6 +1,6 @@
 name: watchdog
 
-# Daily monitor: verifies the check-affichage cron actually ran and succeeded.
+# Daily monitor: verifies the answer loop actually ran and succeeded.
 # Sends a Telegram alert to the admin if the last run failed or is too old.
 on:
   schedule:
@@ -15,7 +15,7 @@ jobs:
     steps:
       - name: Check last check-run
         run: |
-          RUN=$(gh api "repos/1khvled/affichagebot/actions/workflows/check.yml/runs?per_page=1" \
+          RUN=$(gh api "repos/1khvled/affichagebot/actions/workflows/answer.yml/runs?per_page=1" \
             --jq '.workflow_runs[0] | "\(.conclusion)|\(.updated_at)|\(.html_url)"')
           CONC="${RUN%%|*}"; REST="${RUN#*|}"; TS="${REST%%|*}"; URL="${REST##*|}"
           AGE=$(( $(date +%s) - $(date -d "$TS" +%s) ))
@@ -23,7 +23,7 @@ jobs:
           if [ "$CONC" != "success" ] || [ "$AGE" -gt 10800 ]; then
             curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
               -d chat_id="$ADMIN_CHAT_ID" \
-              -d text="WATCHDOG: probleme check-affichage (dernier run: $CONC, il y a ${AGE}s). $URL" > /dev/null
+              -d text="WATCHDOG: probleme answer (dernier run: $CONC, il y a ${AGE}s). $URL" > /dev/null
             echo "ALERT SENT"
           else
             echo "OK"

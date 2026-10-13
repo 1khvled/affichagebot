@@ -1,0 +1,46 @@
+name: scrape
+
+# SLOW loop (every 5 min): pulls the faculty site into cache.json in the
+# repo. Commits only when the data actually changed (with push retries,
+# since answer runs commit state concurrently).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: affichage-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+      - run: pip install requests beautifulsoup4
+      - name: Scrape site into cache
+        run: python scrape.py
+      - name: Commit cache if changed
+        run: |
+          git config user.name "affichage-bot"
+          git config user.email "affichage-bot@users.noreply.github.com"
+          git add cache.json
+          if [ -n "$(git status --porcelain cache.json)" ]; then
+            git commit -m "update cache [skip ci]"
+            git pull --rebase origin main && git push || (sleep 15; git pull --rebase origin main && git push)
+          else
+            echo "cache unchanged"
+          fi
+      - name: Alert admin on failure
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.ADMIN_CHAT_ID }} \
+            -d text="ALERTE: scrape a ECHOUE. Voir l'onglet Actions." > /dev/null
