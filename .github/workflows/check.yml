@@ -1,0 +1,35 @@
+name: check-affichage
+
+# Free cron: runs the bot check every 10 minutes, no server needed.
+# State (subscriptions) is committed back to bot_state.json each run.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: # manual "Run workflow" button in the Actions tab (use to test)
+
+concurrency:
+  group: affichage-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests beautifulsoup4
+      - name: Run one bot check
+        run: python check.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      - name: Persist state (subscriptions / seen links)
+        run: |
+          git config user.name "affichage-bot"
+          git config user.email "affichage-bot@users.noreply.github.com"
+          git add bot_state.json
+          git diff --cached --quiet || (git commit -m "update bot state [skip ci]" && git push)
