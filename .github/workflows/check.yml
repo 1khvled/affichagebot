@@ -4,7 +4,7 @@ name: check-affichage
 # State (subscriptions) is committed back to bot_state.json each run.
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch: # manual "Run workflow" button in the Actions tab (use to test)
 
 concurrency:
