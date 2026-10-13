@@ -1,0 +1,9 @@
+bot_state.json
+bot_state.json.tmp
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+check_token.py
+check_site.py
