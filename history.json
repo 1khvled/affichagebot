@@ -1,0 +1,28 @@
+{
+ "files": [
+  {
+   "url": "http://medecine.univ-batna2.dz/sites/default/files/medecine/files/ssh_1.pdf",
+   "text": "ssh_1.pdf",
+   "kind": "",
+   "year": "1ère Année",
+   "module": "SSH",
+   "first_seen": "2026-10-14"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_pneumologie_0.pdf?m=1783605138",
+   "text": "ct_pneumologie_0.pdf",
+   "kind": "CT",
+   "year": "4ème Année",
+   "module": "Pneumologie",
+   "first_seen": "2026-10-14"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/medecine_legale_2.pdf?m=1782050775",
+   "text": "medecine_legale_2.pdf",
+   "kind": "",
+   "year": "6ème Année",
+   "module": "Médecine légale",
+   "first_seen": "2026-10-14"
+  }
+ ]
+}
