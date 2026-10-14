@@ -17,8 +17,10 @@ import bot
 from bot import (
     HELP_TEXT,
     answer_callback,
+    broadcast_exams,
     get_updates,
     group_markers,
+    handle_planning,
     handle_recent,
     handle_search,
     handle_start,
@@ -30,6 +32,7 @@ from bot import (
     normalize_subs,
     save_state,
     scrape_data,
+    scrape_exams,
     send_document,
     send_message,
     tag,
@@ -50,14 +53,15 @@ def load_cache():
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             c = json.load(f)
         data = c.get("data", {})
-        log.info("cache loaded (%s): %d years", c.get("scraped_at", "?"), len(data))
-        return data
+        log.info("cache loaded (%s): %d years, %d exams",
+                 c.get("scraped_at", "?"), len(data), len(c.get("exams", [])))
+        return data, c.get("exams", [])
     except Exception as e:
         log.warning("no usable cache: %s", e)
-        return None
+        return None, []
 
 
-def handle_update(item, state, cached_data):
+def handle_update(item, state, cached_data, cached_exams):
     update_id = item["update_id"]
     msg = item.get("message")
     cb = item.get("callback_query")
@@ -75,6 +79,8 @@ def handle_update(item, state, cached_data):
             handle_search(chat_id, cached_data, text[len("/search"):])
         elif text.startswith("/recent"):
             handle_recent(chat_id, cached_data)
+        elif text.startswith("/planning"):
+            handle_planning(chat_id, cached_exams)
         elif text.startswith("/help"):
             send_message(chat_id, HELP_TEXT)
 
@@ -201,10 +207,11 @@ def main():
     if normalize_subs(state):
         save_state(state)
 
-    cached_data = load_cache()
+    cached_data, cached_exams = load_cache()
     if cached_data is None:
         log.warning("no cache found, one live scrape as fallback")
         cached_data = scrape_data() or {}
+        cached_exams = scrape_exams() or []
 
     if not state.get("seen_links") and cached_data:
         state["seen_links"] = [
@@ -217,7 +224,7 @@ def main():
     if updates and updates.get("ok"):
         for item in updates.get("result", []):
             try:
-                handle_update(item, state, cached_data)
+                handle_update(item, state, cached_data, cached_exams)
             except Exception:
                 log.exception("update failed, offset advanced anyway")
                 state["last_update_id"] = item["update_id"] + 1
@@ -245,6 +252,10 @@ def main():
     if set(state.get("seen_links", [])) != seen_links:
         state["seen_links"] = sorted(seen_links)
         save_state(state)
+    # 3. New exam plannings -> broadcast to ALL users
+    n_ex = broadcast_exams(state, cached_exams)
+    if n_ex:
+        log.info("broadcast %d new exam files", n_ex)
     log.info("check done.")
 
 

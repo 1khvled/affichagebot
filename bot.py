@@ -238,6 +238,122 @@ def scrape_data():
         return None
 
 
+EXAM_URL = "https://medecine.univ-batna2.dz/planning-des-examens"
+
+FRENCH_ORDINALS = [("premi", "1ère Année"), ("deuxi", "2ème Année"),
+                   ("troisi", "3ème Année"), ("quatri", "4ème Année"),
+                   ("cinqui", "5ème Année"), ("sixi", "6ème Année")]
+
+
+def exam_year_name(text):
+    t = (text or "").lower().replace("è", "e").replace("é", "e")
+    for key, year in FRENCH_ORDINALS:
+        if key in t:
+            return year
+    return (text or "").strip() or "Année ?"
+
+
+def scrape_exams():
+    """Exam planning page -> [{year, kind, text, url}].
+
+    kind is 'Examen' or 'ECOS'. [] when the page is (currently) empty,
+    None on network failure (caller keeps the old list).
+    """
+    try:
+        r = session.get(EXAM_URL, timeout=30)
+        if r.status_code != 200:
+            log.warning("Exam page returned %s", r.status_code)
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        target = None
+        for tbl in soup.find_all("table"):
+            head = " ".join(th.get_text(" ", strip=True) for th in tbl.find_all("th")).lower()
+            if "examen" in head:
+                target = tbl
+                break
+        if target is None:
+            log.warning("exam table not found")
+            return []
+        headers = [th.get_text(" ", strip=True) for th in target.find("thead").find_all("th")] \
+            if target.find("thead") else []
+        rows = target.find_all("tr")
+        if target.find("thead"):
+            rows = [x for x in rows if not x.find_parent("thead")]
+        else:
+            rows = rows[1:]
+        items = []
+        for row in rows:
+            cols = row.find_all(["td", "th"])
+            if len(cols) < 2:
+                continue
+            year = exam_year_name(cols[0].get_text(" ", strip=True))
+            for ci in range(1, len(cols)):
+                h = (headers[ci] if ci < len(headers) else "").lower()
+                kind = "ECOS" if "ecos" in h else "Examen"
+                for a in cols[ci].find_all("a", href=True):
+                    href = a["href"].strip()
+                    if not href or href.startswith("#") or href.lower().startswith("javascript:"):
+                        continue
+                    url = urljoin(SITE_ROOT + "/", href)
+                    if not url.lower().startswith(("http://", "https://")):
+                        continue
+                    text = a.get_text(" ", strip=True) or \
+                        urlparse(url).path.rsplit("/", 1)[-1].split("?")[0] or url
+                    items.append({"year": year, "kind": kind, "text": text, "url": url})
+        log.info("Scraped %d exam planning files", len(items))
+        return items
+    except Exception as e:
+        log.warning("scrape_exams failed: %s", e)
+        return None
+
+
+def broadcast_exams(state, exams, sender=None):
+    """Send NEW exam planning files to EVERY known user (all subscriber chats).
+
+    sender(chat, exam) defaults to send_message+send_document. Returns count.
+    Seen URLs are stored in the shared seen_links pool (no extra state).
+    """
+    if sender is None:
+        def sender(chat, ex):
+            send_message(chat,
+                         f"📅 NOUVEAU PLANNING!\nAnnée: {ex.get('year', '?')}\n"
+                         f"Type: {ex.get('kind', 'Examen')}\nFichier: {ex.get('text', '')}")
+            send_document(chat, ex["url"],
+                          caption=f"{ex.get('year', '')} - {ex.get('kind', 'Examen')}")
+    seen = set(state.get("seen_links", []))
+    chats = [c for c in state.get("subscriptions", {}).keys()]
+    count = 0
+    for ex in exams or []:
+        if ex.get("url") in seen:
+            continue
+        for chat in chats:
+            try:
+                sender(chat, ex)
+            except Exception:
+                log.exception("exam broadcast failed")
+            count += 1
+        seen.add(ex["url"])
+    if count:
+        state["seen_links"] = sorted(seen)
+        save_state(state)
+    return count
+
+
+def handle_planning(chat_id, exams):
+    if not exams:
+        send_message(chat_id, "📅 Aucun planning d'examen en ligne pour le moment.")
+        return
+    by_year = {}
+    for ex in exams:
+        by_year.setdefault(ex.get("year", "?"), []).append(ex)
+    resp = "📅 Plannings des examens:\n"
+    for year, items in by_year.items():
+        resp += f"\n{year}:\n"
+        for ex in items[:6]:
+            resp += f"  [{ex.get('kind', 'Examen')}] {ex.get('text', '')}\n  {ex.get('url', '')}\n"
+    send_message(chat_id, resp[:4000])
+
+
 # ---------- State ----------
 
 def load_state():
@@ -370,7 +486,7 @@ def handle_start(chat_id):
     }
     send_message(chat_id,
                  "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\n"
-                 "Commandes: /subs • /search <mot> • /recent • /help",
+                 "Commandes: /subs • /search <mot> • /recent • /planning • /help",
                  markup)
 
 
@@ -466,6 +582,7 @@ HELP_TEXT = (
     "/unsub <n> ou /unsub all — supprimer\n"
     "/search <mot> — chercher (ex: /search cardio)\n"
     "/recent — derniers fichiers publiés\n"
+    "/planning — plannings des examens\n"
     "/help — ce message\n\n"
     "Ouvert à tout le monde, aucun compte requis."
 )
@@ -481,6 +598,7 @@ def main():
     cached_data = scrape_data()
     if cached_data is None:
         cached_data = {}
+    cached_exams = scrape_exams() or []
     last_scrape = time.time()
 
     if not state.get("seen_links") and cached_data:
@@ -518,6 +636,8 @@ def main():
                             handle_search(chat_id, cached_data, text[len("/search"):])
                         elif text.startswith("/recent"):
                             handle_recent(chat_id, cached_data)
+                        elif text.startswith("/planning"):
+                            handle_planning(chat_id, cached_exams)
                         elif text.startswith("/help"):
                             send_message(chat_id, HELP_TEXT)
                         # ignore other text silently
@@ -551,6 +671,9 @@ def main():
                             fresh = scrape_data()
                             if fresh is not None:
                                 cached_data = fresh
+                            ex = scrape_exams()
+                            if ex is not None:
+                                cached_exams = ex
                             last_scrape = time.time()
 
                         if data.startswith("y_"):
@@ -655,6 +778,10 @@ def main():
                 fresh = scrape_data()
                 if fresh is not None:
                     cached_data = fresh
+                    ex = scrape_exams()
+                    if ex is not None:
+                        cached_exams = ex
+                    broadcast_exams(state, cached_exams)
                     subs = state.get("subscriptions", {})
                     seen_links = set(state.get("seen_links", []))
                     new_found = False

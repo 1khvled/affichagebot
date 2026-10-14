@@ -32,6 +32,27 @@ async function getCache() {
   if (!r.ok) return {};
   return (await r.json()).data || {};
 }
+async function getExams() {
+  try {
+    const r = await fetch(CACHE_URL, { cf: { cacheTtl: 120 } });
+    if (!r.ok) return [];
+    return (await r.json()).exams || [];
+  } catch { return []; }
+}
+async function doPlanning(env, chat, exams) {
+  if (!exams.length) {
+    await sendMessage(env, chat, "📅 Aucun planning d'examen en ligne pour le moment.");
+    return;
+  }
+  const byYear = {};
+  for (const ex of exams) (byYear[ex.year || "?"] = byYear[ex.year || "?"] || []).push(ex);
+  let resp = "📅 Plannings des examens:\n";
+  for (const [year, items] of Object.entries(byYear)) {
+    resp += `\n${year}:\n`;
+    for (const ex of items.slice(0, 6)) resp += `  [${ex.kind || "Examen"}] ${ex.text || ""}\n  ${ex.url || ""}\n`;
+  }
+  await sendMessage(env, chat, resp.slice(0, 4000));
+}
 async function seedFromRepo() {
   try {
     const r = await fetch(STATE_URL, { cf: { cacheTtl: 60 } });
@@ -124,6 +145,7 @@ const HELP =
   "/unsub <n> ou /unsub all — supprimer\n" +
   "/search <mot> — chercher (ex: /search cardio)\n" +
   "/recent — derniers fichiers publiés\n" +
+  "/planning — plannings des examens\n" +
   "/help — ce message";
 
 async function doSearch(env, chat, cache, query) {
@@ -196,7 +218,7 @@ async function handleUpdate(env, u) {
     const text = msg.text.trim();
     if (text === "/start") {
       await sendMessage(env, chat,
-        "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\nCommandes: /subs • /unsub • /help",
+        "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\nCommandes: /subs • /search • /recent • /planning • /help",
         { inline_keyboard: [
           [{ text: "1ère Année", callback_data: "y_1" }, { text: "2ème Année", callback_data: "y_2" }],
           [{ text: "3ème Année", callback_data: "y_3" }, { text: "4ème Année", callback_data: "y_4" }],
@@ -228,6 +250,8 @@ async function handleUpdate(env, u) {
       await doSearch(env, chat, await getCache(), text.slice("/search".length));
     } else if (text.startsWith("/recent")) {
       await doRecent(env, chat, await getCache());
+    } else if (text.startsWith("/planning")) {
+      await doPlanning(env, chat, await getExams());
     } else if (text.startsWith("/help")) {
       await sendMessage(env, chat, "🤖 Affichage Bot — notifie dès qu'une note est publiée.\n\n" + HELP);
     }
@@ -352,6 +376,19 @@ async function notifyNew(env) {
         added = true;
       }
     }
+  }
+  // exam plannings: broadcast to EVERY known user
+  const exams = await getExams();
+  const chats = Object.keys(subs);
+  for (const ex of exams) {
+    if (!ex.url || seen.has(ex.url)) continue;
+    for (const chat of chats) {
+      await sendMessage(env, chat,
+        `📅 NOUVEAU PLANNING!\nAnnée: ${ex.year || "?"}\nType: ${ex.kind || "Examen"}\nFichier: ${ex.text || ""}`);
+      await sendDoc(env, chat, ex.url, `${ex.year || ""} - ${ex.kind || "Examen"}`);
+    }
+    seen.add(ex.url);
+    added = true;
   }
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
   return added;
