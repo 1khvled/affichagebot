@@ -10,7 +10,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from bot import scrape_data, scrape_exams, scrape_listes, scrape_news
+from bot import admin_alert, scrape_data, scrape_exams, scrape_listes, scrape_news
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("affichagebot.scrape")
@@ -41,6 +41,14 @@ def main():
 
     n_mods = sum(len(m) for m in data.values())
     n_links = sum(len(v) for m in data.values() for v in m.values())
+    old_mods = sum(len(m) for m in old_data.values()) if isinstance(old_data, dict) else 0
+    if n_mods == 0 and old_mods > 0:
+        # faculty redesign (or parser breakage) — never wipe the cache with this
+        admin_alert(f"ALERTE scrape: 0 module détecté (avant: {old_mods}). Structure du site changée ? Cache conservé.")
+        log.warning("0 modules scraped, keeping old cache")
+        return 0
+    if old_mods > 0 and n_mods < old_mods * 0.5:
+        admin_alert(f"ALERTE scrape: modules {old_mods} → {n_mods}. Vérifier la structure du site.")
     exams = scrape_exams()
     if exams is None:
         exams = old_exams

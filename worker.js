@@ -23,6 +23,8 @@ async function tg(env, method, payload) {
 }
 const sendMessage = (env, chat_id, text, reply_markup) =>
   tg(env, "sendMessage", reply_markup ? { chat_id, text, reply_markup } : { chat_id, text });
+const alertAdmin = (env, text) =>
+  env.ADMIN_CHAT_ID ? tg(env, "sendMessage", { chat_id: env.ADMIN_CHAT_ID, text: text.slice(0, 4000) }) : Promise.resolve({});
 const answerCb = (env, id) => tg(env, "answerCallbackQuery", { callback_query_id: id });
 const sendDoc = (env, chat_id, url, caption) =>
   tg(env, "sendDocument", { chat_id, document: url, caption: (caption || "").slice(0, 1000) });
@@ -468,11 +470,21 @@ async function notifyNew(env) {
 
 export default {
   async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    // authenticated KV backup for disaster recovery (BACKUP_KEY secret)
+    if (url.pathname === "/backup") {
+      if (url.searchParams.get("key") !== env.BACKUP_KEY) return new Response("forbidden", { status: 403 });
+      const subs = (await env.BOTSTATE.get("subs", "json")) || {};
+      const seen = (await env.BOTSTATE.get("seen", "json")) || [];
+      return Response.json({ subscriptions: subs, seen_links: seen });
+    }
     if (request.method === "POST") {
       try {
         const update = await request.json();
         // process in background, ACK Telegram immediately (<1s latency)
-        ctx.waitUntil(handleUpdate(env, update).catch((e) => console.log("bg error", String(e).slice(0, 200))));
+        ctx.waitUntil(
+          handleUpdate(env, update).catch((e) => alertAdmin(env, `WORKER update failed: ${String(e).slice(0, 300)}`))
+        );
       } catch (e) {
         console.log("bad update", String(e).slice(0, 200));
       }
@@ -481,7 +493,11 @@ export default {
     return new Response("affichage bot worker alive. Set Telegram webhook to this URL.");
   },
   async scheduled(event, env) {
-    await notifyNew(env);
+    try {
+      await notifyNew(env);
+    } catch (e) {
+      await alertAdmin(env, `WORKER notify failed: ${String(e && e.stack || e).slice(0, 500)}`);
+    }
     if (new Date().getUTCHours() === 8 && env.ADMIN_CHAT_ID) {
       await sendMessage(env, env.ADMIN_CHAT_ID, "✅ worker alive — scrape + webhook OK");
     }

@@ -33,3 +33,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
+      - name: Verify Telegram webhook points at worker
+        run: |
+          HOOK=$(curl -s "https://api.telegram.org/bot$BOT_TOKEN/getWebhookInfo")
+          URL=$(echo "$HOOK" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'].get('url',''))")
+          PENDING=$(echo "$HOOK" | python3 -c "import json,sys; print(json.load(sys.stdin)['result'].get('pending_update_count','?'))")
+          echo "webhook url=$URL pending=$PENDING"
+          if [ "$URL" != "https://affichagebot.medflash-f496.workers.dev" ]; then
+            curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+              -d chat_id="$ADMIN_CHAT_ID" \
+              -d text="WATCHDOG: webhook Telegram incorrect/absent ($URL). Le bot ne reçoit RIEN." > /dev/null
+            echo "ALERT SENT"
+          fi
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}

@@ -158,6 +158,19 @@ def tag(link):
     return f"[{k}] " if k else ""
 
 
+def admin_alert(text):
+    """Best-effort admin ping (used by cron paths). Silent when unconfigured."""
+    token = os.environ.get("BOT_TOKEN", "").strip()
+    admin = os.environ.get("ADMIN_CHAT_ID", "").strip()
+    if not token or not admin:
+        return
+    try:
+        session.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                     json={"chat_id": admin, "text": text[:4000]}, timeout=20)
+    except Exception:
+        pass
+
+
 def scrape_data():
     """Returns dict {year: {module: [{text, url}]}}.
 

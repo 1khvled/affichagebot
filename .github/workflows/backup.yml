@@ -1,0 +1,37 @@
+name: backup
+
+# Weekly KV backup: dumps worker subscriptions + seen links into the repo
+# (git history = free versioned disaster recovery).
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump KV from worker
+        run: |
+          curl -s -A 'Mozilla/5.0' \
+            "https://affichagebot.medflash-f496.workers.dev/backup?key=${{ secrets.BACKUP_KEY }}" \
+            -o backups/kv-backup.json
+          python3 -c "import json; d=json.load(open('backups/kv-backup.json')); print('subs:', len(d.get('subscriptions', {})), 'seen:', len(d.get('seen_links', [])))"
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+      - name: Commit backup if changed
+        run: |
+          git config user.name "affichage-bot"
+          git config user.email "affichage-bot@users.noreply.github.com"
+          git add backups/kv-backup.json
+          git diff --cached --quiet || (git commit -m "weekly KV backup [skip ci]" && git push)
+      - name: Alert admin on failure
+        if: failure()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.ADMIN_CHAT_ID }} \
+            -d text="ALERTE: backup KV a ECHOUE. Voir l'onglet Actions." > /dev/null

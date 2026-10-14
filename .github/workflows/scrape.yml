@@ -27,6 +27,9 @@ jobs:
       - run: pip install requests beautifulsoup4
       - name: Scrape site into cache
         run: python scrape.py
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
       - name: Commit cache if changed
         run: |
           git config user.name "affichage-bot"
