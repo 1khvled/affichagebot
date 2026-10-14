@@ -78,13 +78,29 @@ async function getSeen(env) {
   return new Set(s);
 }
 const groupMarkers = (hay) => ["G01", "G02", "G03", "G04", "G05", "G06"].filter((m) => hay.includes(m));
-const matchesGroup = (link, g) => {
-  if (g === "ALL") return true;
+const isInfoTrack = (link) => {
+  const t = ((link.text || "") + " " + (link.url || "")).toLowerCase();
+  return t.includes("medecine_informatique") || t.includes("medecine-informatique") || t.includes("med_inf");
+};
+const trackVariants = (links) => {
+  const f = (links || []).map(isInfoTrack);
+  return f.some(Boolean) && !f.every(Boolean);
+};
+const trackLabel = (t) => ({ MED: "Médecine", INFO: "Médecine-Info" }[t] || "Tous");
+const matchesSub = (link, sub) => {
+  const g = sub.group || "ALL";
+  const t = (sub.track || "ALL").toUpperCase();
+  // group part
   const hay = ((link.text || "") + " " + (link.url || "")).toUpperCase();
-  if (!groupMarkers(hay).length) return true; // promotion-wide file: everyone
-  const G = (g || "").toUpperCase();
-  if (PAIRS[G]) return PAIRS[G].some((m) => hay.includes(m));
-  return hay.includes(G); // legacy single group
+  let gok;
+  if (g === "ALL") gok = true;
+  else if (!groupMarkers(hay).length) gok = true;
+  else if (PAIRS[g.toUpperCase()]) gok = PAIRS[g.toUpperCase()].some((m) => hay.includes(m));
+  else gok = hay.includes(g.toUpperCase());
+  if (!gok) return false;
+  if (t === "ALL") return true;
+  const info = isInfoTrack(link);
+  return t === "INFO" ? info : !info;
 };
 const PAIRS = { "G01-G02": ["G01", "G02"], "G03-G04": ["G03", "G04"], "G05-G06": ["G05", "G06"] };
 const normalizeGroup = (g) => {
@@ -164,7 +180,8 @@ async function showSubs(env, chat, subs) {
   let resp = "Vos abonnements (touchez ❌ pour retirer):\n";
   const kb = [];
   subs.forEach((s, i) => {
-    resp += `${i + 1}. ${s.year} - ${s.module} - ${s.group}\n`;
+    const extra = (s.track && s.track !== "ALL") ? ` - ${trackLabel(s.track)}` : "";
+    resp += `${i + 1}. ${s.year} - ${s.module} - ${s.group}${extra}\n`;
     kb.push([{ text: `❌ ${i + 1}. ${s.module.slice(0, 25)} (${s.group})`, callback_data: `u_${i}` }]);
   });
   await sendMessage(env, chat, resp, { inline_keyboard: kb });
@@ -262,6 +279,14 @@ async function handleUpdate(env, u) {
       const modLinks = (cache[y] || {})[mod] || [];
       const modHay = modLinks.map((l) => `${l.text || ""} ${l.url || ""}`.toUpperCase()).join(" ");
       if (modLinks.length && !groupMarkers(modHay).length) {
+        if (trackVariants(modLinks)) {
+          await sendMessage(env, chat, `Module: ${mod}\nVotre filière :`, { inline_keyboard: [
+            [{ text: "Médecine", callback_data: `s_${yn}_${mi}_ALL_MED` }],
+            [{ text: "Médecine-Informatique", callback_data: `s_${yn}_${mi}_ALL_INFO` }],
+            [{ text: "Tous", callback_data: `s_${yn}_${mi}_ALL_ALL` }],
+          ] });
+          return;
+        }
         await sendMessage(env, chat, `Module: ${mod}\nPas de groupes pour ce module :`, { inline_keyboard: [
           [{ text: "Tous (promo entière)", callback_data: `s_${yn}_${mi}_ALL` }],
         ] });
@@ -274,7 +299,9 @@ async function handleUpdate(env, u) {
         [{ text: "Tous les groupes", callback_data: `s_${yn}_${mi}_ALL` }],
       ] });
     } else if (data.startsWith("s_")) {
-      const [, yn, mi, group] = data.split("_");
+      const parts = data.split("_");
+      const yn = parts[1], mi = parts[2];
+      const group = parts[3] || "ALL", track = parts[4] || "ALL";
       const y = yearStr(yn);
       const mod = Object.keys(cache[y] || {})[parseInt(mi, 10)];
       if (!mod) {
@@ -283,17 +310,18 @@ async function handleUpdate(env, u) {
       }
       const subs = await getSubs(env);
       subs[chat] = subs[chat] || [];
-      const sub = { year: y, module: mod, group };
-      if (!subs[chat].some((s) => s.year === y && s.module === mod && s.group === group)) {
+      const sub = { year: y, module: mod, group, track };
+      if (!subs[chat].some((s) => s.year === y && s.module === mod && s.group === group && (s.track || "ALL") === track)) {
         subs[chat].push(sub);
         await env.BOTSTATE.put("subs", JSON.stringify(subs));
       }
+      const extra = track !== "ALL" ? `\nFilière: ${trackLabel(track)}` : "";
       await sendMessage(env, chat,
-        `✅ Abonnement ajouté!\nAnnée: ${y}\nModule: ${mod}\nGroupe: ${group}\nTapez /subs pour voir vos abonnements.`);
+        `✅ Abonnement ajouté!\nAnnée: ${y}\nModule: ${mod}\nGroupe: ${group}${extra}\nTapez /subs pour voir vos abonnements.`);
       const seen = await getSeen(env);
       let sent = 0;
       for (const link of (cache[y][mod] || [])) {
-        if (!matchesGroup(link, group)) continue;
+        if (!matchesSub(link, sub)) continue;
         if (sent >= MAX_EXISTING) {
           await sendMessage(env, chat, "… et d'autres fichiers déjà en ligne.");
           break;
@@ -315,9 +343,10 @@ async function notifyNew(env) {
   for (const [chat, list] of Object.entries(subs)) {
     for (const sub of list) {
       for (const link of (((cache[sub.year] || {})[sub.module]) || [])) {
-        if (!matchesGroup(link, sub.group) || seen.has(link.url)) continue;
+        if (!matchesSub(link, sub) || seen.has(link.url)) continue;
+        const trk = (sub.track && sub.track !== "ALL") ? `\nFilière: ${trackLabel(sub.track)}` : "";
         await sendMessage(env, chat,
-          `🚨 NOUVEL AFFICHAGE!\nAnnée: ${sub.year}\nModule: ${sub.module}\nGroupe: ${sub.group}\nFichier: ${tag(link)}${link.text}`);
+          `🚨 NOUVEL AFFICHAGE!\nAnnée: ${sub.year}\nModule: ${sub.module}\nGroupe: ${sub.group}${trk}\nFichier: ${tag(link)}${link.text}`);
         await sendDoc(env, chat, link.url, `${sub.year} - ${sub.module} (${sub.group})`);
         seen.add(link.url);
         added = true;

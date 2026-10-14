@@ -25,6 +25,7 @@ from bot import (
     handle_subs,
     handle_unsub,
     load_state,
+    matches,
     matches_group,
     normalize_subs,
     save_state,
@@ -32,6 +33,8 @@ from bot import (
     send_document,
     send_message,
     tag,
+    track_label,
+    track_variants,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -124,9 +127,17 @@ def handle_update(item, state, cached_data):
                 mod_links = cached_data[year_str].get(module_name, [])
                 mod_hay = " ".join((l.get("text", "") + " " + l.get("url", "")).upper() for l in mod_links)
                 if mod_links and not group_markers(mod_hay):
-                    markup = {"inline_keyboard": [[{"text": "Tous (promo entière)",
-                                                    "callback_data": f"s_{year_num}_{m_idx}_ALL"}]]}
-                    send_message(chat_id, f"Module: {module_name}\nPas de groupes pour ce module :", markup)
+                    if track_variants(mod_links):
+                        markup = {"inline_keyboard": [
+                            [{"text": "Médecine", "callback_data": f"s_{year_num}_{m_idx}_ALL_MED"}],
+                            [{"text": "Médecine-Informatique", "callback_data": f"s_{year_num}_{m_idx}_ALL_INFO"}],
+                            [{"text": "Tous", "callback_data": f"s_{year_num}_{m_idx}_ALL_ALL"}],
+                        ]}
+                        send_message(chat_id, f"Module: {module_name}\nVotre filière :", markup)
+                    else:
+                        markup = {"inline_keyboard": [[{"text": "Tous (promo entière)",
+                                                        "callback_data": f"s_{year_num}_{m_idx}_ALL"}]]}
+                        send_message(chat_id, f"Module: {module_name}\nPas de groupes pour ce module :", markup)
                 else:
                     markup = {
                         "inline_keyboard": [
@@ -143,21 +154,25 @@ def handle_update(item, state, cached_data):
 
         elif data.startswith("s_"):
             try:
-                _, year_num, m_idx, group = data.split("_")
+                parts = data.split("_")
+                year_num, m_idx = parts[1], parts[2]
+                group = parts[3] if len(parts) > 3 else "ALL"
+                track = parts[4] if len(parts) > 4 else "ALL"
                 year_str = "1ère Année" if year_num == "1" else f"{year_num}ème Année"
                 module_name = list(cached_data[year_str].keys())[int(m_idx)]
                 subs = state.setdefault("subscriptions", {})
                 subs.setdefault(chat_id, [])
-                sub = {"year": year_str, "module": module_name, "group": group}
+                sub = {"year": year_str, "module": module_name, "group": group, "track": track}
                 if sub not in subs[chat_id]:
                     subs[chat_id].append(sub)
                     save_state(state)
+                extra = f"\nFilière: {track_label(track)}" if track != "ALL" else ""
                 send_message(chat_id,
-                             f"✅ Abonnement ajouté!\nAnnée: {year_str}\nModule: {module_name}\nGroupe: {group}\n"
+                             f"✅ Abonnement ajouté!\nAnnée: {year_str}\nModule: {module_name}\nGroupe: {group}{extra}\n"
                              "Tapez /subs pour voir vos abonnements, /unsub pour en retirer un.")
                 sent = 0
                 for link in cached_data.get(year_str, {}).get(module_name, []):
-                    if not matches_group(link, group):
+                    if not matches(link, sub):
                         continue
                     if sent >= 10:
                         send_message(chat_id, "… et d'autres fichiers déjà en ligne.")
@@ -215,12 +230,13 @@ def main():
     for chat, sub_list in state.get("subscriptions", {}).items():
         for sub in sub_list:
             for link in cached_data.get(sub["year"], {}).get(sub["module"], []):
-                if not matches_group(link, sub["group"]):
+                if not matches(link, sub):
                     continue
                 if link["url"] not in seen_links:
+                    trk = f"\nFilière: {track_label(sub.get('track'))}" if (sub.get("track") or "ALL") != "ALL" else ""
                     send_message(chat,
                                  f"🚨 NOUVEL AFFICHAGE!\nAnnée: {sub['year']}\nModule: {sub['module']}\n"
-                                 f"Groupe: {sub['group']}\nFichier: {tag(link)}{link['text']}")
+                                 f"Groupe: {sub['group']}{trk}\nFichier: {tag(link)}{link['text']}")
                     send_document(chat, link["url"],
                                   caption=f"{sub['year']} - {sub['module']} ({sub['group']})")
                     seen_links.add(link["url"])
