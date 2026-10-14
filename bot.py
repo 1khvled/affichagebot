@@ -297,10 +297,17 @@ def normalize_subs(state):
     return changed
 
 
+def group_markers(hay):
+    """Group labels (G01..G06) found in text (upper-cased)."""
+    return [f"G{i:02d}" for i in range(1, 7) if f"G{i:02d}" in hay]
+
+
 def matches_group(link, group):
     if group == "ALL":
         return True
     hay = (link.get("text", "") + " " + link.get("url", "")).upper()
+    if not group_markers(hay):
+        return True  # promotion-wide file (years 1-3): relevant to everyone
     g = (group or "").upper()
     if g in PAIRS:
         return any(m in hay for m in PAIRS[g])
@@ -536,15 +543,24 @@ def main():
                                 m_idx = int(m_idx)
                                 year_str = "1ère Année" if year_num == "1" else f"{year_num}ème Année"
                                 module_name = list(cached_data[year_str].keys())[m_idx]
-                                markup = {
-                                    "inline_keyboard": [
-                                        [{"text": "G01 - G02", "callback_data": f"s_{year_num}_{m_idx}_G01-G02"}],
-                                        [{"text": "G03 - G04", "callback_data": f"s_{year_num}_{m_idx}_G03-G04"}],
-                                        [{"text": "G05 - G06", "callback_data": f"s_{year_num}_{m_idx}_G05-G06"}],
-                                        [{"text": "Tous les groupes", "callback_data": f"s_{year_num}_{m_idx}_ALL"}],
-                                    ]
-                                }
-                                send_message(chat_id, f"Module: {module_name}\nChoisissez le groupe:", markup)
+                                mod_links = cached_data[year_str].get(module_name, [])
+                                mod_hay = " ".join((l.get("text", "") + " " + l.get("url", "")).upper()
+                                                   for l in mod_links)
+                                if mod_links and not group_markers(mod_hay):
+                                    # pre-clinical module: no groups exist, single choice
+                                    markup = {"inline_keyboard": [[{"text": "Tous (promo entière)",
+                                                                   "callback_data": f"s_{year_num}_{m_idx}_ALL"}]]}
+                                    send_message(chat_id, f"Module: {module_name}\nPas de groupes pour ce module :", markup)
+                                else:
+                                    markup = {
+                                        "inline_keyboard": [
+                                            [{"text": "G01 - G02", "callback_data": f"s_{year_num}_{m_idx}_G01-G02"}],
+                                            [{"text": "G03 - G04", "callback_data": f"s_{year_num}_{m_idx}_G03-G04"}],
+                                            [{"text": "G05 - G06", "callback_data": f"s_{year_num}_{m_idx}_G05-G06"}],
+                                            [{"text": "Tous les groupes", "callback_data": f"s_{year_num}_{m_idx}_ALL"}],
+                                        ]
+                                    }
+                                    send_message(chat_id, f"Module: {module_name}\nChoisissez le groupe:", markup)
                             except Exception:
                                 log.exception("module select failed")
                                 send_message(chat_id, "Erreur lors de la sélection. Tapez /start pour recommencer.")

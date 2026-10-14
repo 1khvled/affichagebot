@@ -18,6 +18,7 @@ from bot import (
     HELP_TEXT,
     answer_callback,
     get_updates,
+    group_markers,
     handle_recent,
     handle_search,
     handle_start,
@@ -120,15 +121,22 @@ def handle_update(item, state, cached_data):
                 _, year_num, m_idx = data.split("_")
                 year_str = "1ère Année" if year_num == "1" else f"{year_num}ème Année"
                 module_name = list(cached_data[year_str].keys())[int(m_idx)]
-                markup = {
-                    "inline_keyboard": [
-                        [{"text": "G01 - G02", "callback_data": f"s_{year_num}_{m_idx}_G01-G02"}],
-                        [{"text": "G03 - G04", "callback_data": f"s_{year_num}_{m_idx}_G03-G04"}],
-                        [{"text": "G05 - G06", "callback_data": f"s_{year_num}_{m_idx}_G05-G06"}],
-                        [{"text": "Tous les groupes", "callback_data": f"s_{year_num}_{m_idx}_ALL"}],
-                    ]
-                }
-                send_message(chat_id, f"Module: {module_name}\nChoisissez le groupe:", markup)
+                mod_links = cached_data[year_str].get(module_name, [])
+                mod_hay = " ".join((l.get("text", "") + " " + l.get("url", "")).upper() for l in mod_links)
+                if mod_links and not group_markers(mod_hay):
+                    markup = {"inline_keyboard": [[{"text": "Tous (promo entière)",
+                                                    "callback_data": f"s_{year_num}_{m_idx}_ALL"}]]}
+                    send_message(chat_id, f"Module: {module_name}\nPas de groupes pour ce module :", markup)
+                else:
+                    markup = {
+                        "inline_keyboard": [
+                            [{"text": "G01 - G02", "callback_data": f"s_{year_num}_{m_idx}_G01-G02"}],
+                            [{"text": "G03 - G04", "callback_data": f"s_{year_num}_{m_idx}_G03-G04"}],
+                            [{"text": "G05 - G06", "callback_data": f"s_{year_num}_{m_idx}_G05-G06"}],
+                            [{"text": "Tous les groupes", "callback_data": f"s_{year_num}_{m_idx}_ALL"}],
+                        ]
+                    }
+                    send_message(chat_id, f"Module: {module_name}\nChoisissez le groupe:", markup)
             except Exception:
                 log.exception("module select failed")
                 send_message(chat_id, "Erreur lors de la sélection. Tapez /start pour recommencer.")

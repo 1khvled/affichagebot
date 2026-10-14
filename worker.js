@@ -77,9 +77,11 @@ async function getSeen(env) {
   }
   return new Set(s);
 }
+const groupMarkers = (hay) => ["G01", "G02", "G03", "G04", "G05", "G06"].filter((m) => hay.includes(m));
 const matchesGroup = (link, g) => {
   if (g === "ALL") return true;
   const hay = ((link.text || "") + " " + (link.url || "")).toUpperCase();
+  if (!groupMarkers(hay).length) return true; // promotion-wide file: everyone
   const G = (g || "").toUpperCase();
   if (PAIRS[G]) return PAIRS[G].some((m) => hay.includes(m));
   return hay.includes(G); // legacy single group
@@ -255,6 +257,14 @@ async function handleUpdate(env, u) {
       const mod = Object.keys(cache[y] || {})[parseInt(mi, 10)];
       if (!mod) {
         await sendMessage(env, chat, "Erreur. Tapez /start pour recommencer.");
+        return;
+      }
+      const modLinks = (cache[y] || {})[mod] || [];
+      const modHay = modLinks.map((l) => `${l.text || ""} ${l.url || ""}`.toUpperCase()).join(" ");
+      if (modLinks.length && !groupMarkers(modHay).length) {
+        await sendMessage(env, chat, `Module: ${mod}\nPas de groupes pour ce module :`, { inline_keyboard: [
+          [{ text: "Tous (promo entière)", callback_data: `s_${yn}_${mi}_ALL` }],
+        ] });
         return;
       }
       await sendMessage(env, chat, `Module: ${mod}\nChoisissez le groupe:`, { inline_keyboard: [
