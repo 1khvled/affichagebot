@@ -78,7 +78,26 @@
    "Urgence médicale": []
   }
  },
- "exams": [],
+ "exams": [
+  {
+   "kind": "Examen",
+   "text": "Programme d'examen cycle clinique 2026.2027",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/programme_dexamen_cycle_clinique_2026.2027.pdf?m=1791964949",
+   "year": "4ème Année"
+  },
+  {
+   "kind": "Examen",
+   "text": "Programme d'examen cycle clinique 2026.2027",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/programme_dexamen_cycle_clinique_2026.2027.pdf?m=1791964949",
+   "year": "5ème Année"
+  },
+  {
+   "kind": "Examen",
+   "text": "Programme d'examen cycle clinique 2026.2027",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/programme_dexamen_cycle_clinique_2026.2027.pdf?m=1791964949",
+   "year": "6ème Année"
+  }
+ ],
  "listes": [
   {
    "kind": "Alphabétique",
@@ -179,5 +198,5 @@
    "url": "https://medecine.univ-batna2.dz/news/terrain-de-stage-5%C3%A8me-ann%C3%A9e"
   }
  ],
- "scraped_at": "2026-10-14T01:14:14Z"
+ "scraped_at": "2026-10-14T08:03:13Z"
 }
