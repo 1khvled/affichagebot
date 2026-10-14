@@ -13,6 +13,7 @@
    "Physique /Biophysique": [],
    "SSH": [
     {
+     "kind": "",
      "text": "ssh_1.pdf",
      "url": "http://medecine.univ-batna2.dz/sites/default/files/medecine/files/ssh_1.pdf"
     }
@@ -43,6 +44,7 @@
    "Neurologie": [],
    "Pneumologie": [
     {
+     "kind": "CT",
      "text": "ct_pneumologie_0.pdf",
      "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_pneumologie_0.pdf?m=1783605138"
     }
@@ -64,6 +66,7 @@
    "Maladies Systémiques": [],
    "Médecine légale": [
     {
+     "kind": "",
      "text": "medecine_legale_2.pdf",
      "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/medecine_legale_2.pdf?m=1782050775"
     }
@@ -75,5 +78,5 @@
    "Urgence médicale": []
   }
  },
- "scraped_at": "2026-10-13T23:59:55Z"
+ "scraped_at": "2026-10-14T00:42:14Z"
 }
