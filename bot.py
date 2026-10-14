@@ -240,6 +240,8 @@ def scrape_data():
 
 EXAM_URL = "https://medecine.univ-batna2.dz/planning-des-examens"
 NEWS_URL = "https://medecine.univ-batna2.dz/"
+LISTES_URL = "https://medecine.univ-batna2.dz/listes-nominatives-2020-2021-groupes-0"
+SALLES_URL = "https://medecine.univ-batna2.dz/r%C3%A9partition-des-%C3%A9tudiants"
 
 FRENCH_ORDINALS = [("premi", "1ère Année"), ("deuxi", "2ème Année"),
                    ("troisi", "3ème Année"), ("quatri", "4ème Année"),
@@ -410,6 +412,101 @@ def handle_planning(chat_id, exams):
     send_message(chat_id, resp[:4000])
 
 
+def liste_kind(header):
+    h = (header or "").lower()
+    if "salle" in h:
+        return "Salles"
+    if "mérite" in h or "merite" in h:
+        return "Mérite"
+    if "alphab" in h or "section" in h or "groupe" in h:
+        return "Alphabétique"
+    if "stage" in h or "répartition" in h or "repartition" in h:
+        return "Stages"
+    return ""
+
+
+def scrape_listes():
+    """Student lists (nominatives/sections/mérite/stages) + exam room
+    assignments -> [{year, kind, text, url}]. None if nothing reachable."""
+    out = []
+    ok = False
+    for url in (LISTES_URL, SALLES_URL):
+        page_default = "Salles" if "partition" in url else "Listes"
+        try:
+            r = session.get(url, timeout=30)
+            if r.status_code != 200:
+                log.warning("Listes page returned %s: %s", r.status_code, url)
+                continue
+            ok = True
+            soup = BeautifulSoup(r.text, "html.parser")
+            for tbl in soup.find_all("table"):
+                headers = [th.get_text(" ", strip=True) for th in tbl.find_all("th")]
+                rows = tbl.find_all("tr")
+                if tbl.find("thead"):
+                    rows = [x for x in rows if not x.find_parent("thead")]
+                else:
+                    rows = rows[1:]
+                for row in rows:
+                    cols = row.find_all(["td", "th"])
+                    if not cols:
+                        continue
+                    year = exam_year_name(cols[0].get_text(" ", strip=True))
+                    # scan ALL columns: links sometimes sit next to the
+                    # year name in the first cell (salles page pattern)
+                    for ci, col in enumerate(cols):
+                        kind = liste_kind(headers[ci] if ci < len(headers) else "") or page_default
+                        for a in col.find_all("a", href=True):
+                            href = a["href"].strip()
+                            if not href or href.startswith("#") or href.lower().startswith("javascript:"):
+                                continue
+                            furl = urljoin(SITE_ROOT + "/", href)
+                            if not furl.lower().startswith(("http://", "https://")):
+                                continue
+                            text = a.get_text(" ", strip=True) or \
+                                urlparse(furl).path.rsplit("/", 1)[-1].split("?")[0] or furl
+                            out.append({"year": year, "kind": kind or "Listes",
+                                        "text": text, "url": furl})
+        except Exception as e:
+            log.warning("scrape_listes failed for %s: %s", url, e)
+    if not ok:
+        return None
+    # dedupe (same file linked twice)
+    seen_urls, uniq = set(), []
+    for it in out:
+        if it["url"] not in seen_urls:
+            seen_urls.add(it["url"])
+            uniq.append(it)
+    log.info("Scraped %d student-list files", len(uniq))
+    return uniq
+
+
+def broadcast_listes(state, listes, sender=None):
+    """Send NEW student lists / room assignments to EVERY known user."""
+    if sender is None:
+        def sender(chat, it):
+            send_message(chat,
+                         f"📋 NOUVELLE LISTE!\nAnnée: {it.get('year', '?')}\n"
+                         f"Type: {it.get('kind', 'Listes')}\nFichier: {it.get('text', '')}")
+            send_document(chat, it["url"],
+                          caption=f"{it.get('year', '')} - {it.get('kind', 'Listes')}")
+    return _broadcast(state, listes, sender)
+
+
+def handle_listes(chat_id, listes):
+    if not listes:
+        send_message(chat_id, "📋 Aucune liste en ligne pour le moment.")
+        return
+    by_year = {}
+    for it in listes:
+        by_year.setdefault(it.get("year", "?"), []).append(it)
+    resp = "📋 Listes des étudiants / salles:\n"
+    for year, items in by_year.items():
+        resp += f"\n{year}:\n"
+        for it in items[:8]:
+            resp += f"  [{it.get('kind', 'Listes')}] {it.get('text', '')}\n  {it.get('url', '')}\n"
+    send_message(chat_id, resp[:4000])
+
+
 # ---------- State ----------
 
 def load_state():
@@ -542,7 +639,7 @@ def handle_start(chat_id):
     }
     send_message(chat_id,
                  "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\n"
-                 "Commandes: /subs • /search <mot> • /recent • /planning • /actus • /help",
+                 "Commandes: /subs • /search <mot> • /recent • /planning • /actus • /listes • /help",
                  markup)
 
 
@@ -640,6 +737,7 @@ HELP_TEXT = (
     "/recent — derniers fichiers publiés\n"
     "/planning — plannings des examens\n"
     "/actus — dernières nouveautés de la faculté\n"
+    "/listes — listes étudiants / salles\n"
     "/help — ce message\n\n"
     "Ouvert à tout le monde, aucun compte requis."
 )
@@ -657,6 +755,7 @@ def main():
         cached_data = {}
     cached_exams = scrape_exams() or []
     cached_news = scrape_news() or []
+    cached_listes = scrape_listes() or []
     last_scrape = time.time()
 
     if not state.get("seen_links") and cached_data:
@@ -698,6 +797,8 @@ def main():
                             handle_planning(chat_id, cached_exams)
                         elif text.startswith("/actus"):
                             handle_actus(chat_id, cached_news)
+                        elif text.startswith("/listes"):
+                            handle_listes(chat_id, cached_listes)
                         elif text.startswith("/help"):
                             send_message(chat_id, HELP_TEXT)
                         # ignore other text silently
@@ -737,6 +838,9 @@ def main():
                             nw = scrape_news()
                             if nw is not None:
                                 cached_news = nw
+                            li = scrape_listes()
+                            if li is not None:
+                                cached_listes = li
                             last_scrape = time.time()
 
                         if data.startswith("y_"):
@@ -849,6 +953,7 @@ def main():
                         cached_news = nw
                     broadcast_exams(state, cached_exams)
                     broadcast_news(state, cached_news)
+                    broadcast_listes(state, cached_listes)
                     subs = state.get("subscriptions", {})
                     seen_links = set(state.get("seen_links", []))
                     new_found = False

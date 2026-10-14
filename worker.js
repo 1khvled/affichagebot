@@ -46,6 +46,13 @@ async function getNews() {
     return (await r.json()).news || [];
   } catch { return []; }
 }
+async function getListes() {
+  try {
+    const r = await fetch(CACHE_URL, { cf: { cacheTtl: 120 } });
+    if (!r.ok) return [];
+    return (await r.json()).listes || [];
+  } catch { return []; }
+}
 async function doPlanning(env, chat, exams) {
   if (!exams.length) {
     await sendMessage(env, chat, "📅 Aucun planning d'examen en ligne pour le moment.");
@@ -68,6 +75,20 @@ async function doActus(env, chat, news) {
   let resp = "📰 Dernières nouveautés de la faculté:\n";
   for (const item of news.slice(0, 8)) {
     resp += `\n${item.title || ""}\n📅 ${item.date || ""}\n${item.url || ""}\n`;
+  }
+  await sendMessage(env, chat, resp.slice(0, 4000));
+}
+async function doListes(env, chat, listes) {
+  if (!listes.length) {
+    await sendMessage(env, chat, "📋 Aucune liste en ligne pour le moment.");
+    return;
+  }
+  const byYear = {};
+  for (const it of listes) (byYear[it.year || "?"] = byYear[it.year || "?"] || []).push(it);
+  let resp = "📋 Listes des étudiants / salles:\n";
+  for (const [year, items] of Object.entries(byYear)) {
+    resp += `\n${year}:\n`;
+    for (const it of items.slice(0, 8)) resp += `  [${it.kind || "Listes"}] ${it.text || ""}\n  ${it.url || ""}\n`;
   }
   await sendMessage(env, chat, resp.slice(0, 4000));
 }
@@ -165,6 +186,7 @@ const HELP =
   "/recent — derniers fichiers publiés\n" +
   "/planning — plannings des examens\n" +
   "/actus — dernières nouveautés de la faculté\n" +
+  "/listes — listes étudiants / salles\n" +
   "/help — ce message";
 
 async function doSearch(env, chat, cache, query) {
@@ -237,7 +259,7 @@ async function handleUpdate(env, u) {
     const text = msg.text.trim();
     if (text === "/start") {
       await sendMessage(env, chat,
-        "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\nCommandes: /subs • /search • /recent • /planning • /actus • /help",
+        "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\nCommandes: /subs • /search • /recent • /planning • /actus • /listes • /help",
         { inline_keyboard: [
           [{ text: "1ère Année", callback_data: "y_1" }, { text: "2ème Année", callback_data: "y_2" }],
           [{ text: "3ème Année", callback_data: "y_3" }, { text: "4ème Année", callback_data: "y_4" }],
@@ -273,6 +295,8 @@ async function handleUpdate(env, u) {
       await doPlanning(env, chat, await getExams());
     } else if (text.startsWith("/actus")) {
       await doActus(env, chat, await getNews());
+    } else if (text.startsWith("/listes")) {
+      await doListes(env, chat, await getListes());
     } else if (text.startsWith("/help")) {
       await sendMessage(env, chat, "🤖 Affichage Bot — notifie dès qu'une note est publiée.\n\n" + HELP);
     }
@@ -424,6 +448,18 @@ async function notifyNew(env) {
       }
     }
     seen.add(item.url);
+    added = true;
+  }
+  // student lists / room assignments: broadcast to EVERY known user
+  const listes = await getListes();
+  for (const it of listes) {
+    if (!it.url || seen.has(it.url)) continue;
+    for (const chat of chats) {
+      await sendMessage(env, chat,
+        `📋 NOUVELLE LISTE!\nAnnée: ${it.year || "?"}\nType: ${it.kind || "Listes"}\nFichier: ${it.text || ""}`);
+      await sendDoc(env, chat, it.url, `${it.year || ""} - ${it.kind || "Listes"}`);
+    }
+    seen.add(it.url);
     added = true;
   }
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
