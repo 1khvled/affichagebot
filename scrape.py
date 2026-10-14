@@ -10,7 +10,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from bot import scrape_data, scrape_exams
+from bot import scrape_data, scrape_exams, scrape_news
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("affichagebot.scrape")
@@ -27,11 +27,13 @@ def main():
 
     old_data = {}
     old_exams = []
+    old_news = []
     try:
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             old_cache = json.load(f)
             old_data = old_cache.get("data", {})
             old_exams = old_cache.get("exams", [])
+            old_news = old_cache.get("news", [])
     except Exception:
         pass
 
@@ -41,16 +43,22 @@ def main():
     if exams is None:
         exams = old_exams
         log.warning("exam page unreachable, keeping %d cached exam files", len(exams))
-    if old_data != data or old_exams != exams:
+    news = scrape_news()
+    if news is None:
+        news = old_news
+        log.warning("news unreachable, keeping %d cached news", len(news))
+    if old_data != data or old_exams != exams or old_news != news:
         payload = {"scraped_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                   "data": data, "exams": exams}
+                   "data": data, "exams": exams, "news": news}
         tmp = CACHE_FILE + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=1, sort_keys=True)
         os.replace(tmp, CACHE_FILE)
-        log.info("cache updated (%d modules, %d links, %d exams)", n_mods, n_links, len(exams))
+        log.info("cache updated (%d modules, %d links, %d exams, %d news)",
+                 n_mods, n_links, len(exams), len(news))
     else:
-        log.info("cache unchanged (%d modules, %d links, %d exams)", n_mods, n_links, len(exams))
+        log.info("cache unchanged (%d modules, %d links, %d exams, %d news)",
+                 n_mods, n_links, len(exams), len(news))
 
     # Archive: every file ever seen, with first-seen date. Never shrinks,
     # so removed affichages stay browsable via /history.

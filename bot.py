@@ -239,6 +239,7 @@ def scrape_data():
 
 
 EXAM_URL = "https://medecine.univ-batna2.dz/planning-des-examens"
+NEWS_URL = "https://medecine.univ-batna2.dz/"
 
 FRENCH_ORDINALS = [("premi", "1ère Année"), ("deuxi", "2ème Année"),
                    ("troisi", "3ème Année"), ("quatri", "4ème Année"),
@@ -308,11 +309,7 @@ def scrape_exams():
 
 
 def broadcast_exams(state, exams, sender=None):
-    """Send NEW exam planning files to EVERY known user (all subscriber chats).
-
-    sender(chat, exam) defaults to send_message+send_document. Returns count.
-    Seen URLs are stored in the shared seen_links pool (no extra state).
-    """
+    """Send NEW exam planning files to EVERY known user (all subscriber chats)."""
     if sender is None:
         def sender(chat, ex):
             send_message(chat,
@@ -320,23 +317,82 @@ def broadcast_exams(state, exams, sender=None):
                          f"Type: {ex.get('kind', 'Examen')}\nFichier: {ex.get('text', '')}")
             send_document(chat, ex["url"],
                           caption=f"{ex.get('year', '')} - {ex.get('kind', 'Examen')}")
+    return _broadcast(state, exams, sender)
+
+
+def broadcast_news(state, news, sender=None):
+    """Send NEW faculty news (any post: PDF, photo, text) to EVERY known user."""
+    if sender is None:
+        def sender(chat, item):
+            text = (f"📰 NOUVEAUTÉ\n{item.get('title', '')}\n"
+                    f"📅 {item.get('date', '')}\n{item.get('url', '')}")
+            if item.get("photo"):
+                api_post("sendPhoto", {"chat_id": chat, "photo": item["photo"],
+                                       "caption": text[:1000]})
+            else:
+                send_message(chat, text)
+    return _broadcast(state, news, sender)
+
+
+def _broadcast(state, items, sender):
+    """Shared dedupe + fanout over the seen_links pool. Returns item count."""
     seen = set(state.get("seen_links", []))
     chats = [c for c in state.get("subscriptions", {}).keys()]
     count = 0
-    for ex in exams or []:
-        if ex.get("url") in seen:
+    for it in items or []:
+        if not it.get("url") or it["url"] in seen:
             continue
         for chat in chats:
             try:
-                sender(chat, ex)
+                sender(chat, it)
             except Exception:
-                log.exception("exam broadcast failed")
+                log.exception("broadcast failed")
             count += 1
-        seen.add(ex["url"])
+        seen.add(it["url"])
     if count:
         state["seen_links"] = sorted(seen)
         save_state(state)
     return count
+
+
+def scrape_news():
+    """Homepage 'Nouveautés' -> [{title, url, date, photo}].
+    [] when empty, None on network failure (caller keeps the old list)."""
+    try:
+        r = session.get(NEWS_URL, timeout=30)
+        if r.status_code != 200:
+            log.warning("News page returned %s", r.status_code)
+            return None
+        soup = BeautifulSoup(r.text, "html.parser")
+        box = soup.select_one("#box-os_news_latest-page") or soup
+        items = []
+        for art in box.select("article.node-news"):
+            a = art.select_one("h1.node-title a")
+            if not a or not a.get("href"):
+                continue
+            url = urljoin(SITE_ROOT + "/", a["href"].strip())
+            title = a.get_text(" ", strip=True)
+            date_el = art.select_one(".date-display-single")
+            date = date_el.get_text(" ", strip=True) if date_el else ""
+            img = art.select_one("img")
+            photo = urljoin(SITE_ROOT + "/", img["src"].strip()) if img and img.get("src") else ""
+            if title and url.lower().startswith(("http://", "https://")):
+                items.append({"title": title, "url": url, "date": date, "photo": photo})
+        log.info("Scraped %d news items", len(items))
+        return items
+    except Exception as e:
+        log.warning("scrape_news failed: %s", e)
+        return None
+
+
+def handle_actus(chat_id, news):
+    if not news:
+        send_message(chat_id, "📰 Aucune nouveauté en ce moment.")
+        return
+    resp = "📰 Dernières nouveautés de la faculté:\n"
+    for item in news[:8]:
+        resp += f"\n{item.get('title', '')}\n📅 {item.get('date', '')}\n{item.get('url', '')}\n"
+    send_message(chat_id, resp[:4000])
 
 
 def handle_planning(chat_id, exams):
@@ -486,7 +542,7 @@ def handle_start(chat_id):
     }
     send_message(chat_id,
                  "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\n"
-                 "Commandes: /subs • /search <mot> • /recent • /planning • /help",
+                 "Commandes: /subs • /search <mot> • /recent • /planning • /actus • /help",
                  markup)
 
 
@@ -583,6 +639,7 @@ HELP_TEXT = (
     "/search <mot> — chercher (ex: /search cardio)\n"
     "/recent — derniers fichiers publiés\n"
     "/planning — plannings des examens\n"
+    "/actus — dernières nouveautés de la faculté\n"
     "/help — ce message\n\n"
     "Ouvert à tout le monde, aucun compte requis."
 )
@@ -599,6 +656,7 @@ def main():
     if cached_data is None:
         cached_data = {}
     cached_exams = scrape_exams() or []
+    cached_news = scrape_news() or []
     last_scrape = time.time()
 
     if not state.get("seen_links") and cached_data:
@@ -638,6 +696,8 @@ def main():
                             handle_recent(chat_id, cached_data)
                         elif text.startswith("/planning"):
                             handle_planning(chat_id, cached_exams)
+                        elif text.startswith("/actus"):
+                            handle_actus(chat_id, cached_news)
                         elif text.startswith("/help"):
                             send_message(chat_id, HELP_TEXT)
                         # ignore other text silently
@@ -674,6 +734,9 @@ def main():
                             ex = scrape_exams()
                             if ex is not None:
                                 cached_exams = ex
+                            nw = scrape_news()
+                            if nw is not None:
+                                cached_news = nw
                             last_scrape = time.time()
 
                         if data.startswith("y_"):
@@ -781,7 +844,11 @@ def main():
                     ex = scrape_exams()
                     if ex is not None:
                         cached_exams = ex
+                    nw = scrape_news()
+                    if nw is not None:
+                        cached_news = nw
                     broadcast_exams(state, cached_exams)
+                    broadcast_news(state, cached_news)
                     subs = state.get("subscriptions", {})
                     seen_links = set(state.get("seen_links", []))
                     new_found = False
