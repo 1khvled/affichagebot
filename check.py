@@ -18,6 +18,8 @@ from bot import (
     HELP_TEXT,
     answer_callback,
     get_updates,
+    handle_recent,
+    handle_search,
     handle_start,
     handle_subs,
     handle_unsub,
@@ -27,6 +29,7 @@ from bot import (
     scrape_data,
     send_document,
     send_message,
+    tag,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -63,6 +66,10 @@ def handle_update(item, state, cached_data):
             handle_subs(chat_id, state)
         elif text.startswith("/unsub"):
             handle_unsub(chat_id, state, text)
+        elif text.startswith("/search"):
+            handle_search(chat_id, cached_data, text[len("/search"):])
+        elif text.startswith("/recent"):
+            handle_recent(chat_id, cached_data)
         elif text.startswith("/help"):
             send_message(chat_id, HELP_TEXT)
 
@@ -73,6 +80,24 @@ def handle_update(item, state, cached_data):
             pass
         chat_id = str(cb["message"]["chat"]["id"])
         data = cb.get("data", "")
+
+        if data.startswith("u_"):
+            try:
+                idx = int(data.split("_")[1])
+                subs = state.get("subscriptions", {}).get(chat_id, [])
+                if 0 <= idx < len(subs):
+                    removed = subs.pop(idx)
+                    state["subscriptions"][chat_id] = subs
+                    save_state(state)
+                    send_message(chat_id, f"🗑️ Supprimé: {removed['year']} - {removed['module']} - {removed['group']}")
+                    handle_subs(chat_id, state)
+                else:
+                    send_message(chat_id, "Déjà supprimé. Tapez /subs.")
+            except Exception:
+                send_message(chat_id, "Erreur. Tapez /subs.")
+            state["last_update_id"] = update_id + 1
+            save_state(state)
+            return
 
         if data.startswith("y_"):
             year_num = data.split("_")[1]
@@ -131,7 +156,7 @@ def handle_update(item, state, cached_data):
                     if sent >= 10:
                         send_message(chat_id, "… et d'autres fichiers déjà en ligne.")
                         break
-                    send_message(chat_id, f"📄 Affichage existant: {link['text']}")
+                    send_message(chat_id, f"📄 Affichage existant: {tag(link)}{link['text']}")
                     send_document(chat_id, link["url"], caption=f"{year_str} - {module_name} ({group})")
                     sent += 1
                     if link["url"] not in state.get("seen_links", []):
@@ -187,7 +212,7 @@ def main():
                 if link["url"] not in seen_links:
                     send_message(chat,
                                  f"🚨 NOUVEL AFFICHAGE!\nAnnée: {sub['year']}\nModule: {sub['module']}\n"
-                                 f"Groupe: {sub['group']}\nFichier: {link['text']}")
+                                 f"Groupe: {sub['group']}\nFichier: {tag(link)}{link['text']}")
                     send_document(chat, link["url"],
                                   caption=f"{sub['year']} - {sub['module']} ({sub['group']})")
                     seen_links.add(link["url"])

@@ -60,10 +60,81 @@ async function getSeen(env) {
 }
 const matchesGroup = (link, g) =>
   g === "ALL" || ((link.text || "") + " " + (link.url || "")).toUpperCase().includes(g.toUpperCase());
+const tag = (link) => (link && link.kind ? `[${link.kind}] ` : "");
+const mtime = (link) => {
+  try {
+    const m = new URL(link.url).searchParams.get("m");
+    return m && /^\d+$/.test(m) ? parseInt(m, 10) : 0;
+  } catch { return 0; }
+};
 
 const HELP =
   "/start — choisir année → module → groupe et recevoir les PDF\n" +
-  "/subs — voir mes abonnements\n/unsub <n> — supprimer l'abonnement n\n/help — ce message";
+  "/subs — voir mes abonnements (touchez ❌ pour retirer)\n" +
+  "/unsub <n> ou /unsub all — supprimer\n" +
+  "/search <mot> — chercher (ex: /search cardio)\n" +
+  "/recent — derniers fichiers publiés\n" +
+  "/help — ce message";
+
+async function doSearch(env, chat, cache, query) {
+  const q = (query || "").trim().toLowerCase();
+  if (!q) {
+    await sendMessage(env, chat, "Usage: /search <mot>  (ex: /search cardio)");
+    return;
+  }
+  const hits = [];
+  for (const [year, mods] of Object.entries(cache)) {
+    for (const [mod, links] of Object.entries(mods)) {
+      if (mod.toLowerCase().includes(q)) hits.push({ year, mod, link: null });
+      for (const link of links) {
+        if ((link.text || "").toLowerCase().includes(q)) hits.push({ year, mod, link });
+      }
+    }
+  }
+  if (!hits.length) {
+    await sendMessage(env, chat, `Aucun résultat pour « ${query.trim()} ».`);
+    return;
+  }
+  let resp = `🔎 Résultats pour « ${query.trim()} »:\n`;
+  for (const h of hits.slice(0, 10)) {
+    resp += h.link
+      ? `\n${h.year} — ${h.mod}\n${tag(h.link)}${h.link.text}\n${h.link.url}\n`
+      : `\n${h.year} — module: ${h.mod}\n`;
+  }
+  if (hits.length > 10) resp += `\n… +${hits.length - 10} autres.`;
+  await sendMessage(env, chat, resp.slice(0, 4000));
+}
+
+async function doRecent(env, chat, cache, n = 8) {
+  const all = [];
+  for (const [year, mods] of Object.entries(cache)) {
+    for (const [mod, links] of Object.entries(mods)) {
+      for (const link of links) all.push({ ts: mtime(link), year, mod, link });
+    }
+  }
+  all.sort((a, b) => b.ts - a.ts);
+  if (!all.length) {
+    await sendMessage(env, chat, "Aucun fichier en ligne pour le moment.");
+    return;
+  }
+  let resp = "🆕 Derniers affichages:\n";
+  for (const h of all.slice(0, n)) resp += `\n${h.year} — ${h.mod}\n${tag(h.link)}${h.link.text}\n`;
+  await sendMessage(env, chat, resp.slice(0, 4000));
+}
+
+async function showSubs(env, chat, subs) {
+  if (!subs.length) {
+    await sendMessage(env, chat, "Vous n'avez aucun abonnement. Tapez /start pour en créer.");
+    return;
+  }
+  let resp = "Vos abonnements (touchez ❌ pour retirer):\n";
+  const kb = [];
+  subs.forEach((s, i) => {
+    resp += `${i + 1}. ${s.year} - ${s.module} - ${s.group}\n`;
+    kb.push([{ text: `❌ ${i + 1}. ${s.module.slice(0, 25)} (${s.group})`, callback_data: `u_${i}` }]);
+  });
+  await sendMessage(env, chat, resp, { inline_keyboard: kb });
+}
 
 async function handleUpdate(env, u) {
   const msg = u.message;
@@ -81,22 +152,31 @@ async function handleUpdate(env, u) {
           [{ text: "5ème Année", callback_data: "y_5" }, { text: "6ème Année", callback_data: "y_6" }],
         ] });
     } else if (text.startsWith("/subs")) {
-      const subs = (await getSubs(env))[chat] || [];
-      await sendMessage(env, chat, subs.length
-        ? "Vos abonnements:\n" + subs.map((s, i) => `${i + 1}. ${s.year} - ${s.module} - ${s.group}`).join("\n") + "\n\nSupprimer: /unsub <numéro>"
-        : "Aucun abonnement. Tapez /start pour en créer.");
+      await showSubs(env, chat, (await getSubs(env))[chat] || []);
     } else if (text.startsWith("/unsub")) {
       const subs = await getSubs(env);
       const mine = subs[chat] || [];
-      const n = parseInt((text.split(/\s+/)[1] || ""), 10);
-      if (n >= 1 && n <= mine.length) {
-        const [rm] = mine.splice(n - 1, 1);
-        subs[chat] = mine;
+      const arg = (text.split(/\s+/)[1] || "").toLowerCase();
+      if (arg === "all") {
+        subs[chat] = [];
         await env.BOTSTATE.put("subs", JSON.stringify(subs));
-        await sendMessage(env, chat, `🗑️ Supprimé: ${rm.year} - ${rm.module} - ${rm.group}`);
+        await sendMessage(env, chat, `🗑️ ${mine.length} abonnement(s) supprimé(s).`);
       } else {
-        await sendMessage(env, chat, "Usage: /unsub <numéro>  (ex: /unsub 1). Tapez /subs pour la liste.");
+        const n = parseInt(arg, 10);
+        if (n >= 1 && n <= mine.length) {
+          const [rm] = mine.splice(n - 1, 1);
+          subs[chat] = mine;
+          await env.BOTSTATE.put("subs", JSON.stringify(subs));
+          await sendMessage(env, chat, `🗑️ Supprimé: ${rm.year} - ${rm.module} - ${rm.group}`);
+        } else {
+          await showSubs(env, chat, mine);
+          await sendMessage(env, chat, "Usage: /unsub <numéro> ou /unsub all  (ex: /unsub 1)");
+        }
       }
+    } else if (text.startsWith("/search")) {
+      await doSearch(env, chat, await getCache(), text.slice("/search".length));
+    } else if (text.startsWith("/recent")) {
+      await doRecent(env, chat, await getCache());
     } else if (text.startsWith("/help")) {
       await sendMessage(env, chat, "🤖 Affichage Bot — notifie dès qu'une note est publiée.\n\n" + HELP);
     }
@@ -107,6 +187,21 @@ async function handleUpdate(env, u) {
     const chat = String(cb.message.chat.id);
     const data = cb.data || "";
     await answerCb(env, cb.id).catch(() => {});
+    if (data.startsWith("u_")) {
+      const subs = await getSubs(env);
+      const mine = subs[chat] || [];
+      const idx = parseInt(data.split("_")[1], 10);
+      if (idx >= 0 && idx < mine.length) {
+        const [rm] = mine.splice(idx, 1);
+        subs[chat] = mine;
+        await env.BOTSTATE.put("subs", JSON.stringify(subs));
+        await sendMessage(env, chat, `🗑️ Supprimé: ${rm.year} - ${rm.module} - ${rm.group}`);
+        await showSubs(env, chat, mine);
+      } else {
+        await sendMessage(env, chat, "Déjà supprimé. Tapez /subs.");
+      }
+      return;
+    }
     const cache = await getCache();
 
     if (data.startsWith("y_")) {
@@ -161,7 +256,7 @@ async function handleUpdate(env, u) {
           await sendMessage(env, chat, "… et d'autres fichiers déjà en ligne.");
           break;
         }
-        await sendMessage(env, chat, `📄 Affichage existant: ${link.text}`);
+        await sendMessage(env, chat, `📄 Affichage existant: ${tag(link)}${link.text}`);
         await sendDoc(env, chat, link.url, `${y} - ${mod} (${group})`);
         sent++;
         if (!seen.has(link.url)) seen.add(link.url);
@@ -180,7 +275,7 @@ async function notifyNew(env) {
       for (const link of (((cache[sub.year] || {})[sub.module]) || [])) {
         if (!matchesGroup(link, sub.group) || seen.has(link.url)) continue;
         await sendMessage(env, chat,
-          `🚨 NOUVEL AFFICHAGE!\nAnnée: ${sub.year}\nModule: ${sub.module}\nGroupe: ${sub.group}\nFichier: ${link.text}`);
+          `🚨 NOUVEL AFFICHAGE!\nAnnée: ${sub.year}\nModule: ${sub.module}\nGroupe: ${sub.group}\nFichier: ${tag(link)}${link.text}`);
         await sendDoc(env, chat, link.url, `${sub.year} - ${sub.module} (${sub.group})`);
         seen.add(link.url);
         added = true;

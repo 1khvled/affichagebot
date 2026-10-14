@@ -140,6 +140,24 @@ def _year_name_from_header(text, fallback_idx):
     return YEARS[fallback_idx] if fallback_idx < len(YEARS) else f"Année {fallback_idx + 1}"
 
 
+def kind_from_header(header):
+    """Map a table column header to a file kind tag."""
+    h = (header or "").lower()
+    if "rattrap" in h:
+        return "rattrapage"
+    if h.strip() == "ct" or "ct" in h.split():
+        return "CT"
+    if "note" in h or "epreuve" in h or "épreuve" in h:
+        return "Notes"
+    return ""
+
+
+def tag(link):
+    """Display prefix for a link, e.g. '[CT] '. Empty when unknown."""
+    k = ((link or {}).get("kind") or "").strip()
+    return f"[{k}] " if k else ""
+
+
 def scrape_data():
     """Returns dict {year: {module: [{text, url}]}}.
 
@@ -172,8 +190,14 @@ def scrape_data():
 
         for year, table in tables:
             modules = data.setdefault(year, {})
+            # Column headers tell WHAT each file is (Notes / CT / Rattrapage).
+            thead = table.find("thead")
+            headers = [th.get_text(" ", strip=True) for th in thead.find_all("th")] if thead else []
             rows = table.find_all("tr")
-            for row in rows[1:]:  # skip header
+            # find_all includes the thead header row: drop thead rows when a
+            # thead exists, otherwise skip the first row (legacy layout).
+            body_rows = [r for r in rows if not r.find_parent("thead")] if thead else rows[1:]
+            for row in body_rows:
                 cols = row.find_all(["td", "th"])
                 if not cols:
                     continue
@@ -181,21 +205,20 @@ def scrape_data():
                 if not module_name:
                     continue
                 links = []
-                # NOTE: links sometimes sit in the FIRST column next to the
-                # module name (e.g. SSH, Médecine légale rows), so scan the
-                # whole row, not just cols[1:].
-                for a in row.find_all("a", href=True):
-                    href = a["href"].strip()
-                    if not href or href.startswith("#") or href.lower().startswith("javascript:"):
-                        continue
-                    url = urljoin(SITE_ROOT + "/", href)
-                    if not url.lower().startswith(("http://", "https://")):
-                        continue
-                    text = a.get_text(" ", strip=True)
-                    if not text:
-                        # anchors are often empty; fall back to file name
-                        text = urlparse(url).path.rsplit("/", 1)[-1].split("?")[0] or url
-                    links.append({"text": text, "url": url})
+                for ci, col in enumerate(cols):
+                    kind = "" if ci == 0 else kind_from_header(headers[ci] if ci < len(headers) else "")
+                    for a in col.find_all("a", href=True):
+                        href = a["href"].strip()
+                        if not href or href.startswith("#") or href.lower().startswith("javascript:"):
+                            continue
+                        url = urljoin(SITE_ROOT + "/", href)
+                        if not url.lower().startswith(("http://", "https://")):
+                            continue
+                        text = a.get_text(" ", strip=True)
+                        if not text:
+                            # anchors are often empty; fall back to file name
+                            text = urlparse(url).path.rsplit("/", 1)[-1].split("?")[0] or url
+                        links.append({"text": text, "url": url, "kind": kind})
                 # keep module even with no links (was: `if links:` — the bug that
                 # made the bot show "Aucun module trouvé" after the site was emptied)
                 if module_name not in modules:
@@ -248,6 +271,19 @@ def matches_group(link, group):
 
 # ---------- Bot logic ----------
 
+def file_mtime(link):
+    """Faculty Drupal '?m=<unix time>' cache-buster doubles as publish time."""
+    try:
+        url = (link or {}).get("url", "")
+        q = urlparse(url).query
+        for part in q.split("&"):
+            if part.startswith("m=") and part[2:].isdigit():
+                return int(part[2:])
+    except Exception:
+        pass
+    return 0
+
+
 def handle_start(chat_id):
     markup = {
         "inline_keyboard": [
@@ -258,7 +294,7 @@ def handle_start(chat_id):
     }
     send_message(chat_id,
                  "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\n"
-                 "Commandes: /subs (mes abonnements) • /unsub (se désabonner) • /help",
+                 "Commandes: /subs • /search <mot> • /recent • /help",
                  markup)
 
 
@@ -267,11 +303,13 @@ def handle_subs(chat_id, state):
     if not subs:
         send_message(chat_id, "Vous n'avez aucun abonnement. Tapez /start pour en créer.")
         return
-    resp = "Vos abonnements actuels:\n"
+    resp = "Vos abonnements actuels (touchez ❌ pour retirer):\n"
+    keyboard = []
     for idx, s in enumerate(subs):
         resp += f"{idx+1}. {s['year']} - {s['module']} - {s['group']}\n"
-    resp += "\nPour supprimer: /unsub <numéro>  (ex: /unsub 1)"
-    send_message(chat_id, resp)
+        keyboard.append([{"text": f"❌ {idx+1}. {s['module'][:25]} ({s['group']})",
+                          "callback_data": f"u_{idx}"}])
+    send_message(chat_id, resp, {"inline_keyboard": keyboard})
 
 
 def handle_unsub(chat_id, state, text):
@@ -281,9 +319,17 @@ def handle_unsub(chat_id, state, text):
         send_message(chat_id, "Aucun abonnement à supprimer.")
         return
     parts = text.split()
-    if len(parts) < 2 or not parts[1].isdigit():
+    if len(parts) < 2:
         handle_subs(chat_id, state)
-        send_message(chat_id, "Usage: /unsub <numéro>  (ex: /unsub 1)")
+        send_message(chat_id, "Usage: /unsub <numéro> ou /unsub all  (ex: /unsub 1)")
+        return
+    if parts[1].lower() == "all":
+        state["subscriptions"][chat] = []
+        save_state(state)
+        send_message(chat_id, f"🗑️ {len(subs)} abonnement(s) supprimé(s).")
+        return
+    if not parts[1].isdigit():
+        handle_subs(chat_id, state)
         return
     idx = int(parts[1]) - 1
     if 0 <= idx < len(subs):
@@ -295,11 +341,54 @@ def handle_unsub(chat_id, state, text):
         send_message(chat_id, "Numéro invalide. Tapez /subs pour voir la liste.")
 
 
+def handle_search(chat_id, cached_data, query):
+    q = (query or "").strip().lower()
+    if not q:
+        send_message(chat_id, "Usage: /search <mot>  (ex: /search cardio)")
+        return
+    hits = []
+    for year, mods in cached_data.items():
+        for mod, links in mods.items():
+            if q in mod.lower():
+                hits.append((year, mod, None))
+            for link in links:
+                if q in link.get("text", "").lower():
+                    hits.append((year, mod, link))
+    if not hits:
+        send_message(chat_id, f"Aucun résultat pour « {query} ».")
+        return
+    resp = f"🔎 Résultats pour « {query} »:\n"
+    for year, mod, link in hits[:10]:
+        if link:
+            resp += f"\n{year} — {mod}\n{tag(link)}{link['text']}\n{link['url']}\n"
+        else:
+            resp += f"\n{year} — module: {mod}\n"
+    if len(hits) > 10:
+        resp += f"\n… +{len(hits) - 10} autres."
+    send_message(chat_id, resp[:4000])
+
+
+def handle_recent(chat_id, cached_data, n=8):
+    all_links = [(file_mtime(l), y, m, l)
+                 for y, mods in cached_data.items()
+                 for m, links in mods.items() for l in links]
+    all_links.sort(key=lambda t: t[0], reverse=True)
+    if not all_links:
+        send_message(chat_id, "Aucun fichier en ligne pour le moment.")
+        return
+    resp = "🆕 Derniers affichages:\n"
+    for ts, y, m, link in all_links[:n]:
+        resp += f"\n{y} — {m}\n{tag(link)}{link['text']}\n"
+    send_message(chat_id, resp[:4000])
+
+
 HELP_TEXT = (
     "🤖 *Affichage Bot* — notifie dès qu'une note est publiée.\n\n"
     "/start — choisir année → module → groupe et recevoir les PDF\n"
-    "/subs — voir mes abonnements\n"
-    "/unsub <n> — supprimer l'abonnement n°n\n"
+    "/subs — voir mes abonnements (❌ pour retirer)\n"
+    "/unsub <n> ou /unsub all — supprimer\n"
+    "/search <mot> — chercher (ex: /search cardio)\n"
+    "/recent — derniers fichiers publiés\n"
     "/help — ce message\n\n"
     "Ouvert à tout le monde, aucun compte requis."
 )
@@ -348,6 +437,10 @@ def main():
                             handle_subs(chat_id, state)
                         elif text.startswith("/unsub"):
                             handle_unsub(chat_id, state, text)
+                        elif text.startswith("/search"):
+                            handle_search(chat_id, cached_data, text[len("/search"):])
+                        elif text.startswith("/recent"):
+                            handle_recent(chat_id, cached_data)
                         elif text.startswith("/help"):
                             send_message(chat_id, HELP_TEXT)
                         # ignore other text silently
@@ -359,6 +452,23 @@ def main():
                             pass
                         chat_id = str(cb["message"]["chat"]["id"])
                         data = cb.get("data", "")
+
+                        if data.startswith("u_"):
+                            try:
+                                idx = int(data.split("_")[1])
+                                subs = state.get("subscriptions", {}).get(chat_id, [])
+                                if 0 <= idx < len(subs):
+                                    removed = subs.pop(idx)
+                                    state["subscriptions"][chat_id] = subs
+                                    save_state(state)
+                                    send_message(chat_id,
+                                                 f"🗑️ Supprimé: {removed['year']} - {removed['module']} - {removed['group']}")
+                                    handle_subs(chat_id, state)
+                                else:
+                                    send_message(chat_id, "Déjà supprimé. Tapez /subs.")
+                            except Exception:
+                                send_message(chat_id, "Erreur. Tapez /subs.")
+                            continue
 
                         if time.time() - last_scrape > 300 or not cached_data:
                             fresh = scrape_data()
@@ -425,7 +535,7 @@ def main():
                                     if sent >= 10:
                                         send_message(chat_id, f"... et {len(links)-sent} fichier(s) de plus déjà en ligne.")
                                         break
-                                    send_message(chat_id, f"📄 Affichage existant: {link['text']}")
+                                    send_message(chat_id, f"📄 Affichage existant: {tag(link)}{link['text']}")
                                     send_document(chat_id, link["url"], caption=f"{year_str} - {module_name} ({group})")
                                     sent += 1
                                     if link["url"] not in state.get("seen_links", []):
@@ -460,7 +570,7 @@ def main():
                                     continue
                                 if link["url"] not in seen_links:
                                     send_message(chat,
-                                                 f"🚨 NOUVEL AFFICHAGE!\nAnnée: {y}\nModule: {m}\nGroupe: {g}\nFichier: {link['text']}")
+                                                 f"🚨 NOUVEL AFFICHAGE!\nAnnée: {y}\nModule: {m}\nGroupe: {g}\nFichier: {tag(link)}{link['text']}")
                                     send_document(chat, link["url"], caption=f"{y} - {m} ({g})")
                                     seen_links.add(link["url"])
                                     new_found = True
