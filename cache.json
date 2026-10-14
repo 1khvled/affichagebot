@@ -101,8 +101,14 @@
  "listes": [
   {
    "kind": "Alphabétique",
-   "text": "* Liste par ordre Alphabétique",
-   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_premiere_annee_par_ordre_alphabetique.pdf?m=1790002248",
+   "text": "* liste par groupes section 1",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_section_1.pdf?m=1791988050",
+   "year": "1ère Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "* liste par groupes section2",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_section2.pdf?m=1791988106",
    "year": "1ère Année"
   },
   {
@@ -198,5 +204,5 @@
    "url": "https://medecine.univ-batna2.dz/news/programme-examen-th%C3%A9orique-ecos-cycle-clinique"
   }
  ],
- "scraped_at": "2026-10-14T14:26:16Z"
+ "scraped_at": "2026-10-14T14:29:17Z"
 }
