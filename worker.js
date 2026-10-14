@@ -48,6 +48,25 @@ async function getSubs(env) {
     s = (await seedFromRepo()).subscriptions;
     await env.BOTSTATE.put("subs", JSON.stringify(s));
   }
+  // migrate legacy single-group subs to pairs (once)
+  let changed = false;
+  for (const [chat, list] of Object.entries(s)) {
+    const seen = new Set();
+    const out = [];
+    for (const sub of list) {
+      sub.group = normalizeGroup(sub.group);
+      const k = `${sub.year}|${sub.module}|${sub.group}`;
+      if (!seen.has(k)) {
+        seen.add(k);
+        out.push(sub);
+      }
+    }
+    if (out.length !== list.length || out.some((o, i) => o.group !== list[i].group)) {
+      s[chat] = out;
+      changed = true;
+    }
+  }
+  if (changed) await env.BOTSTATE.put("subs", JSON.stringify(s));
   return s;
 }
 async function getSeen(env) {
@@ -58,8 +77,21 @@ async function getSeen(env) {
   }
   return new Set(s);
 }
-const matchesGroup = (link, g) =>
-  g === "ALL" || ((link.text || "") + " " + (link.url || "")).toUpperCase().includes(g.toUpperCase());
+const matchesGroup = (link, g) => {
+  if (g === "ALL") return true;
+  const hay = ((link.text || "") + " " + (link.url || "")).toUpperCase();
+  const G = (g || "").toUpperCase();
+  if (PAIRS[G]) return PAIRS[G].some((m) => hay.includes(m));
+  return hay.includes(G); // legacy single group
+};
+const PAIRS = { "G01-G02": ["G01", "G02"], "G03-G04": ["G03", "G04"], "G05-G06": ["G05", "G06"] };
+const normalizeGroup = (g) => {
+  const G = (g || "").toUpperCase();
+  for (const [pair, members] of Object.entries(PAIRS)) {
+    if (G === pair || members.includes(G)) return pair;
+  }
+  return G === "ALL" ? "ALL" : g;
+};
 const tag = (link) => (link && link.kind ? `[${link.kind}] ` : "");
 const mtime = (link) => {
   try {
@@ -226,9 +258,9 @@ async function handleUpdate(env, u) {
         return;
       }
       await sendMessage(env, chat, `Module: ${mod}\nChoisissez le groupe:`, { inline_keyboard: [
-        [{ text: "G01", callback_data: `s_${yn}_${mi}_G01` }, { text: "G02", callback_data: `s_${yn}_${mi}_G02` }],
-        [{ text: "G03", callback_data: `s_${yn}_${mi}_G03` }, { text: "G04", callback_data: `s_${yn}_${mi}_G04` }],
-        [{ text: "G05", callback_data: `s_${yn}_${mi}_G05` }, { text: "G06", callback_data: `s_${yn}_${mi}_G06` }],
+        [{ text: "G01 - G02", callback_data: `s_${yn}_${mi}_G01-G02` }],
+        [{ text: "G03 - G04", callback_data: `s_${yn}_${mi}_G03-G04` }],
+        [{ text: "G05 - G06", callback_data: `s_${yn}_${mi}_G05-G06` }],
         [{ text: "Tous les groupes", callback_data: `s_${yn}_${mi}_ALL` }],
       ] });
     } else if (data.startsWith("s_")) {

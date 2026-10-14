@@ -25,6 +25,7 @@ from bot import (
     handle_unsub,
     load_state,
     matches_group,
+    normalize_subs,
     save_state,
     scrape_data,
     send_document,
@@ -121,12 +122,9 @@ def handle_update(item, state, cached_data):
                 module_name = list(cached_data[year_str].keys())[int(m_idx)]
                 markup = {
                     "inline_keyboard": [
-                        [{"text": "G01", "callback_data": f"s_{year_num}_{m_idx}_G01"},
-                         {"text": "G02", "callback_data": f"s_{year_num}_{m_idx}_G02"}],
-                        [{"text": "G03", "callback_data": f"s_{year_num}_{m_idx}_G03"},
-                         {"text": "G04", "callback_data": f"s_{year_num}_{m_idx}_G04"}],
-                        [{"text": "G05", "callback_data": f"s_{year_num}_{m_idx}_G05"},
-                         {"text": "G06", "callback_data": f"s_{year_num}_{m_idx}_G06"}],
+                        [{"text": "G01 - G02", "callback_data": f"s_{year_num}_{m_idx}_G01-G02"}],
+                        [{"text": "G03 - G04", "callback_data": f"s_{year_num}_{m_idx}_G03-G04"}],
+                        [{"text": "G05 - G06", "callback_data": f"s_{year_num}_{m_idx}_G05-G06"}],
                         [{"text": "Tous les groupes", "callback_data": f"s_{year_num}_{m_idx}_ALL"}],
                     ]
                 }
@@ -177,6 +175,8 @@ def main():
     if not bot.TOKEN:
         raise SystemExit("FATAL: BOT_TOKEN env var missing (GitHub secret BOT_TOKEN).")
     state = load_state()
+    if normalize_subs(state):
+        save_state(state)
 
     cached_data = load_cache()
     if cached_data is None:

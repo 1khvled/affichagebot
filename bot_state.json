@@ -4,17 +4,12 @@
       {
         "year": "5ème Année",
         "module": "Gynécologie - Obstétrique",
-        "group": "G03"
+        "group": "G03-G04"
       },
       {
         "year": "5ème Année",
         "module": "Gynécologie - Obstétrique",
-        "group": "G04"
-      },
-      {
-        "year": "5ème Année",
-        "module": "Gynécologie - Obstétrique",
-        "group": "G02"
+        "group": "G01-G02"
       }
     ]
   },

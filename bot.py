@@ -261,11 +261,50 @@ def save_state(state):
     os.replace(tmp, STATE_FILE)
 
 
+# The faculty publishes one file per PAIR (G01-G02, G03-G04, G05-G06),
+# so subscriptions are pairs too. Old single-group subs auto-migrate.
+PAIRS = {
+    "G01-G02": ("G01", "G02"),
+    "G03-G04": ("G03", "G04"),
+    "G05-G06": ("G05", "G06"),
+}
+GROUP_CHOICES = ["G01-G02", "G03-G04", "G05-G06", "ALL"]
+
+
+def normalize_group(group):
+    g = (group or "").upper()
+    for pair, members in PAIRS.items():
+        if g == pair or g in members:
+            return pair
+    return "ALL" if g == "ALL" else group
+
+
+def normalize_subs(state):
+    """Migrate legacy single-group subs to pairs (dedupes). Returns True if changed."""
+    changed = False
+    subs = state.get("subscriptions", {})
+    for chat, sub_list in subs.items():
+        seen, out = set(), []
+        for s in sub_list:
+            s["group"] = normalize_group(s.get("group", "ALL"))
+            key = (s.get("year"), s.get("module"), s["group"])
+            if key not in seen:
+                seen.add(key)
+                out.append(s)
+        if out != sub_list:
+            subs[chat] = out
+            changed = True
+    return changed
+
+
 def matches_group(link, group):
     if group == "ALL":
         return True
-    g = group.upper()
     hay = (link.get("text", "") + " " + link.get("url", "")).upper()
+    g = (group or "").upper()
+    if g in PAIRS:
+        return any(m in hay for m in PAIRS[g])
+    # legacy single group (pre-migration)
     return g in hay
 
 
@@ -499,12 +538,9 @@ def main():
                                 module_name = list(cached_data[year_str].keys())[m_idx]
                                 markup = {
                                     "inline_keyboard": [
-                                        [{"text": "G01", "callback_data": f"s_{year_num}_{m_idx}_G01"},
-                                         {"text": "G02", "callback_data": f"s_{year_num}_{m_idx}_G02"}],
-                                        [{"text": "G03", "callback_data": f"s_{year_num}_{m_idx}_G03"},
-                                         {"text": "G04", "callback_data": f"s_{year_num}_{m_idx}_G04"}],
-                                        [{"text": "G05", "callback_data": f"s_{year_num}_{m_idx}_G05"},
-                                         {"text": "G06", "callback_data": f"s_{year_num}_{m_idx}_G06"}],
+                                        [{"text": "G01 - G02", "callback_data": f"s_{year_num}_{m_idx}_G01-G02"}],
+                                        [{"text": "G03 - G04", "callback_data": f"s_{year_num}_{m_idx}_G03-G04"}],
+                                        [{"text": "G05 - G06", "callback_data": f"s_{year_num}_{m_idx}_G05-G06"}],
                                         [{"text": "Tous les groupes", "callback_data": f"s_{year_num}_{m_idx}_ALL"}],
                                     ]
                                 }
