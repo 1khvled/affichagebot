@@ -1,27 +1,6 @@
-/**
- * Affichage Bot — Cloudflare Worker front-end (INSTANT replies, free tier).
- *
- * - Telegram webhook POSTs updates here -> answered in <1s (no cron wait).
- * - PDFs are passed to Telegram BY URL (sendDocument with document=url),
- *   so the Worker never downloads file bytes (fits free CPU limits).
- * - Subscriptions + seen-links live in KV (namespace binding: BOTSTATE).
- *   First run seeds both from the repo's bot_state.json (public raw).
- * - Faculty data comes from cache.json in the repo (refreshed every 5 min
- *   by the GitHub scrape workflow).
- * - A scheduled trigger (cron */2 * * * *) sends NEW-PDF notifications
- *   plus a daily "alive" heartbeat to the admin.
- *
- * Setup (dashboard, no wrangler needed):
- *  1. Workers & Pages -> Create Worker -> paste this file -> Deploy.
- *  2. KV -> create namespace BOTSTATE -> Worker Settings -> Bindings -> add
- *     KV Namespace binding named BOTSTATE.
- *  3. Worker Settings -> Variables & Secrets -> add secrets: BOT_TOKEN,
- *     ADMIN_CHAT_ID.
- *  4. Worker Triggers -> Cron Triggers -> add `*\/2 * * * *`.
- *  5. Set the webhook once in a browser:
- *     https://api.telegram.org/bot<TOKEN>/setWebhook?url=<WORKER_URL>
- *  6. Disable the GitHub `answer` workflow (polling + webhook conflict).
- */
+// Affichage Bot - Cloudflare Worker front-end (instant replies, free tier).
+// Telegram webhook POSTs updates here. PDFs pass by URL. KV binding: BOTSTATE.
+// Secrets: BOT_TOKEN, ADMIN_CHAT_ID. Cron: */2 * * * * . Cache: repo cache.json.
 
 const CACHE_URL = "https://raw.githubusercontent.com/1khvled/affichagebot/main/cache.json";
 const STATE_URL = "https://raw.githubusercontent.com/1khvled/affichagebot/main/bot_state.json";
