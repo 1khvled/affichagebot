@@ -17,7 +17,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Dump KV from worker
         run: |
-          curl -s -A 'Mozilla/5.0' \
+          mkdir -p backups
+          curl -fsS -A 'Mozilla/5.0' \
             "https://affichagebot.medflash-f496.workers.dev/backup?key=${{ secrets.BACKUP_KEY }}" \
             -o backups/kv-backup.json
           python3 -c "import json; d=json.load(open('backups/kv-backup.json')); print('subs:', len(d.get('subscriptions', {})), 'seen:', len(d.get('seen_links', [])))"
