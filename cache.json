@@ -187,7 +187,7 @@
  "news": [
   {
    "date": "October 18, 2026",
-   "photo": "",
+   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
    "title": "test",
    "url": "https://medecine.univ-batna2.dz/news/test"
   },
@@ -216,5 +216,5 @@
    "url": "https://medecine.univ-batna2.dz/news/liste-non-inscrit-en-cinqui%C3%A8me-ann%C3%A9e-m%C3%A9decine"
   }
  ],
- "scraped_at": "2026-10-18T13:40:17Z"
+ "scraped_at": "2026-10-18T13:41:14Z"
 }
