@@ -186,12 +186,6 @@
  ],
  "news": [
   {
-   "date": "October 18, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
-   "title": "test",
-   "url": "https://medecine.univ-batna2.dz/news/test"
-  },
-  {
    "date": "October 14, 2026",
    "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
    "title": "Avis aux étudiants deuxième année médecine",
@@ -214,7 +208,13 @@
    "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
    "title": "liste non inscrit en cinquième année médecine",
    "url": "https://medecine.univ-batna2.dz/news/liste-non-inscrit-en-cinqui%C3%A8me-ann%C3%A9e-m%C3%A9decine"
+  },
+  {
+   "date": "October 6, 2026",
+   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_01.png?m=1706171076&itok=2m53hu6w",
+   "title": "Programme examen théorique + ECOS ( Cycle clinique )",
+   "url": "https://medecine.univ-batna2.dz/news/programme-examen-th%C3%A9orique-ecos-cycle-clinique"
   }
  ],
- "scraped_at": "2026-10-18T13:41:14Z"
+ "scraped_at": "2026-10-18T13:42:16Z"
 }
