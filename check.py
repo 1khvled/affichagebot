@@ -18,7 +18,7 @@ from bot import (
     HELP_TEXT,
     answer_callback,
     broadcast_exams,
-    broadcast_news,
+
     get_updates,
     group_markers,
     handle_actus,
@@ -268,11 +268,8 @@ def main():
     n_ex = broadcast_exams(state, cached_exams)
     if n_ex:
         log.info("broadcast %d new exam files", n_ex)
-    # 4. New faculty news (PDF/photo/text) -> broadcast to ALL users
-    #    (user wants news auto-pushed; lists are NOT auto-pushed)
-    n_nw = broadcast_news(state, cached_news)
-    if n_nw:
-        log.info("broadcast %d news items", n_nw)
+    # News is NOT auto-broadcast here — handled by the worker's hourly cron
+    # (0 * * * *). On-demand /actus still works. Lists never auto-broadcast.
     log.info("check done.")
 
 

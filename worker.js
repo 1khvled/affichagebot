@@ -494,7 +494,7 @@ export default {
   async scheduled(event, env) {
     const cron = (event && event.cron) || "";
     try {
-      if (cron === "*/30 * * * *") {
+      if (cron === "0 * * * *") {
         await notifyNews(env);
       } else {
         await notifyFast(env);
