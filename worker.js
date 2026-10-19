@@ -498,8 +498,15 @@ export default {
     } catch (e) {
       await alertAdmin(env, `WORKER notify failed: ${String(e && e.stack || e).slice(0, 500)}`);
     }
-    if (new Date().getUTCHours() === 8 && env.ADMIN_CHAT_ID) {
-      await sendMessage(env, env.ADMIN_CHAT_ID, "✅ worker alive — scrape + webhook OK");
+    // Daily alive ping — max ONE per UTC day, guarded by a KV marker so a
+    // misbehaving cron (or clock quirk) can never spam the admin chat.
+    if (env.ADMIN_CHAT_ID) {
+      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+      const last = await env.BOTSTATE.get("last_ping");
+      if (last !== today) {
+        await env.BOTSTATE.put("last_ping", today);
+        await sendMessage(env, env.ADMIN_CHAT_ID, "✅ worker alive — scrape + webhook OK");
+      }
     }
   },
 };
