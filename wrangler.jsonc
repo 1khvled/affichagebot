@@ -3,8 +3,10 @@
   "main": "worker.js",
   "compatibility_date": "2025-01-01",
   "workers_dev": true,
-  // Cron: every 2 min (notifyNew) — matches the live trigger documented in README.
-  "triggers": { "crons": ["*/2 * * * *"] },
+  // Cron triggers:
+  //   */2  -> notifyFast (grades for subscribers + exam plannings)
+  //   */30 -> notifyNews (faculty news only)
+  "triggers": { "crons": ["*/2 * * * *", "*/30 * * * *"] },
   "kv_namespaces": [
     { "binding": "BOTSTATE", "id": "b1099d536f044372be1fb7894fa40d6a" }
   ]

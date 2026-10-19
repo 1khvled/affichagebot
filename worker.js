@@ -408,7 +408,9 @@ async function handleUpdate(env, u) {
   }
 }
 
-async function notifyNew(env) {
+// Fast path (every 2 min): grades for subscribers + exam plannings broadcast.
+// Does NOT touch news — news has its own 30-min cadence (notifyNews).
+async function notifyFast(env) {
   const [cache, seen, subs] = [await getCache(), await getSeen(env), await getSubs(env)];
   let added = false;
   for (const [chat, list] of Object.entries(subs)) {
@@ -437,9 +439,17 @@ async function notifyNew(env) {
     seen.add(ex.url);
     added = true;
   }
-  // Faculty news IS still auto-broadcast to all users (user wants this).
-  // Student lists are NOT auto-broadcast — only on explicit /listes request.
+  if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
+  return added;
+}
+
+// News-only path (every 30 min): broadcasts faculty news to all users.
+// Runs on its own cron so news cadence is decoupled from grades/exams.
+async function notifyNews(env) {
+  const [seen, subs] = [await getSeen(env), await getSubs(env)];
+  const chats = Object.keys(subs);
   const news = await getNews();
+  let added = false;
   for (const item of news) {
     if (!item.url || seen.has(item.url)) continue;
     const text = `📰 NOUVEAUTÉ\n${item.title || ""}\n📅 ${item.date || ""}\n${item.url}`;
@@ -453,7 +463,6 @@ async function notifyNew(env) {
     seen.add(item.url);
     added = true;
   }
-  // (Exams/plannings are still broadcast to all users below.)
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
   return added;
 }
@@ -483,8 +492,13 @@ export default {
     return new Response("affichage bot worker alive. Set Telegram webhook to this URL.");
   },
   async scheduled(event, env) {
+    const cron = (event && event.cron) || "";
     try {
-      await notifyNew(env);
+      if (cron === "*/30 * * * *") {
+        await notifyNews(env);
+      } else {
+        await notifyFast(env);
+      }
     } catch (e) {
       await alertAdmin(env, `WORKER notify failed: ${String(e && e.stack || e).slice(0, 500)}`);
     }
