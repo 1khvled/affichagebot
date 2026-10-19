@@ -1,0 +1,14 @@
+{
+  "name": "affichagebot",
+  "main": "worker.js",
+  "compatibility_date": "2025-01-01",
+  "workers_dev": true,
+  // Cron: every 2 min (notifyNew) — matches the live trigger documented in README.
+  "triggers": { "crons": ["*/2 * * * *"] },
+  "kv_namespaces": [
+    { "binding": "BOTSTATE", "id": "b1099d536f044372be1fb7894fa40d6a" }
+  ]
+  // Secrets (BOT_TOKEN, ADMIN_CHAT_ID, BACKUP_KEY) are set server-side via
+  // `wrangler secret put` and are preserved across `wrangler deploy` — do not
+  // list them here.
+}
