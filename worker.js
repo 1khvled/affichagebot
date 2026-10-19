@@ -437,8 +437,22 @@ async function notifyNew(env) {
     seen.add(ex.url);
     added = true;
   }
-  // Faculty news and student lists are NO LONGER auto-broadcast.
-  // They are only sent on explicit user request (/actus, /listes).
+  // Faculty news IS still auto-broadcast to all users (user wants this).
+  // Student lists are NOT auto-broadcast — only on explicit /listes request.
+  const news = await getNews();
+  for (const item of news) {
+    if (!item.url || seen.has(item.url)) continue;
+    const text = `📰 NOUVEAUTÉ\n${item.title || ""}\n📅 ${item.date || ""}\n${item.url}`;
+    for (const chat of chats) {
+      if (item.photo) {
+        await tg(env, "sendPhoto", { chat_id: chat, photo: item.photo, caption: text.slice(0, 1000) });
+      } else {
+        await sendMessage(env, chat, text);
+      }
+    }
+    seen.add(item.url);
+    added = true;
+  }
   // (Exams/plannings are still broadcast to all users below.)
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
   return added;
