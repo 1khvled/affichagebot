@@ -437,33 +437,9 @@ async function notifyNew(env) {
     seen.add(ex.url);
     added = true;
   }
-  // faculty news (PDF/photo/text): broadcast to EVERY known user
-  const news = await getNews();
-  for (const item of news) {
-    if (!item.url || seen.has(item.url)) continue;
-    const text = `📰 NOUVEAUTÉ\n${item.title || ""}\n📅 ${item.date || ""}\n${item.url}`;
-    for (const chat of chats) {
-      if (item.photo) {
-        await tg(env, "sendPhoto", { chat_id: chat, photo: item.photo, caption: text.slice(0, 1000) });
-      } else {
-        await sendMessage(env, chat, text);
-      }
-    }
-    seen.add(item.url);
-    added = true;
-  }
-  // student lists / room assignments: broadcast to EVERY known user
-  const listes = await getListes();
-  for (const it of listes) {
-    if (!it.url || seen.has(it.url)) continue;
-    for (const chat of chats) {
-      await sendMessage(env, chat,
-        `📋 NOUVELLE LISTE!\nAnnée: ${it.year || "?"}\nType: ${it.kind || "Listes"}\nFichier: ${it.text || ""}`);
-      await sendDoc(env, chat, it.url, `${it.year || ""} - ${it.kind || "Listes"}`);
-    }
-    seen.add(it.url);
-    added = true;
-  }
+  // Faculty news and student lists are NO LONGER auto-broadcast.
+  // They are only sent on explicit user request (/actus, /listes).
+  // (Exams/plannings are still broadcast to all users below.)
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
   return added;
 }
