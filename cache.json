@@ -136,6 +136,12 @@
    "year": "3ème Année"
   },
   {
+   "kind": "Alphabétique",
+   "text": "Liste par groupes",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_quatrieme_annee_medecine_0.pdf?m=1792420235",
+   "year": "4ème Année"
+  },
+  {
    "kind": "Mérite",
    "text": "Liste par ordre de mérite G05 et G06",
    "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/quatrieme_annee_par_ordre_de_merite.pdf?m=1789998632",
@@ -216,5 +222,5 @@
    "url": "https://medecine.univ-batna2.dz/news/liste-des-%C3%A9tudiants-non-effectu%C3%A9-leur-inscription-en-m%C3%A9decine-20262027"
   }
  ],
- "scraped_at": "2026-10-19T11:06:18Z"
+ "scraped_at": "2026-10-19T14:31:18Z"
 }
