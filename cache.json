@@ -186,6 +186,12 @@
  ],
  "news": [
   {
+   "date": "October 19, 2026",
+   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
+   "title": "Avis aux étudiants première année médecine",
+   "url": "https://medecine.univ-batna2.dz/news/avis-aux-%C3%A9tudiants-premi%C3%A8re-ann%C3%A9e-m%C3%A9decine-17"
+  },
+  {
    "date": "October 18, 2026",
    "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
    "title": "Avis aux étudiants de 3ᵉ année Médecine",
@@ -208,13 +214,7 @@
    "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
    "title": "liste des étudiants non effectué leur inscription en  médecine 2026/2027",
    "url": "https://medecine.univ-batna2.dz/news/liste-des-%C3%A9tudiants-non-effectu%C3%A9-leur-inscription-en-m%C3%A9decine-20262027"
-  },
-  {
-   "date": "October 8, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
-   "title": "liste non inscrit en cinquième année médecine",
-   "url": "https://medecine.univ-batna2.dz/news/liste-non-inscrit-en-cinqui%C3%A8me-ann%C3%A9e-m%C3%A9decine"
   }
  ],
- "scraped_at": "2026-10-18T13:57:12Z"
+ "scraped_at": "2026-10-19T11:06:18Z"
 }
