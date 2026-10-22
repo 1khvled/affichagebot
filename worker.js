@@ -30,30 +30,24 @@ const sendDoc = (env, chat_id, url, caption) =>
   tg(env, "sendDocument", { chat_id, document: url, caption: (caption || "").slice(0, 1000) });
 
 async function getCache() {
-  const r = await fetch(CACHE_URL, { cf: { cacheTtl: 120 } });
+  const r = await fetch(CACHE_URL, { cf: { cacheTtl: 300 } });
   if (!r.ok) return {};
-  return (await r.json()).data || {};
+  const j = await r.json();
+  // attach exams/news/listes so callers don't re-fetch cache.json
+  const c = j.data || {};
+  c.exams = j.exams || [];
+  c.news = j.news || [];
+  c.listes = j.listes || [];
+  return c;
 }
 async function getExams() {
-  try {
-    const r = await fetch(CACHE_URL, { cf: { cacheTtl: 120 } });
-    if (!r.ok) return [];
-    return (await r.json()).exams || [];
-  } catch { return []; }
+  try { return (await getCache()).exams || []; } catch { return []; }
 }
 async function getNews() {
-  try {
-    const r = await fetch(CACHE_URL, { cf: { cacheTtl: 120 } });
-    if (!r.ok) return [];
-    return (await r.json()).news || [];
-  } catch { return []; }
+  try { return (await getCache()).news || []; } catch { return []; }
 }
 async function getListes() {
-  try {
-    const r = await fetch(CACHE_URL, { cf: { cacheTtl: 120 } });
-    if (!r.ok) return [];
-    return (await r.json()).listes || [];
-  } catch { return []; }
+  try { return (await getCache()).listes || []; } catch { return []; }
 }
 async function doPlanning(env, chat, exams) {
   if (!exams.length) {
@@ -408,10 +402,12 @@ async function handleUpdate(env, u) {
   }
 }
 
-// Fast path (every 2 min): grades for subscribers + exam plannings broadcast.
-// Does NOT touch news — news has its own 30-min cadence (notifyNews).
+// Fast path (every 5 min): grades for subscribers + exam plannings broadcast.
+// Does NOT touch news — news has its own hourly cadence (notifyNews).
+// Fetches cache.json ONCE per run (exams derived from it) to save KV/HTTP ops.
 async function notifyFast(env) {
   const [cache, seen, subs] = [await getCache(), await getSeen(env), await getSubs(env)];
+  const exams = (cache && cache.exams) ? cache.exams : (await getExams());
   let added = false;
   for (const [chat, list] of Object.entries(subs)) {
     for (const sub of list) {
@@ -427,9 +423,8 @@ async function notifyFast(env) {
     }
   }
   // exam plannings: broadcast to EVERY known user
-  const exams = await getExams();
   const chats = Object.keys(subs);
-  for (const ex of exams) {
+  for (const ex of (exams || [])) {
     if (!ex.url || seen.has(ex.url)) continue;
     for (const chat of chats) {
       await sendMessage(env, chat,
@@ -443,8 +438,10 @@ async function notifyFast(env) {
   return added;
 }
 
-// News-only path (every 30 min): broadcasts faculty news to all users.
+// News-only path (hourly): broadcasts faculty news to all users.
 // Runs on its own cron so news cadence is decoupled from grades/exams.
+// Also performs the daily alive ping (guarded by last_ping marker) so the
+// fast cron no longer spends KV reads on it.
 async function notifyNews(env) {
   const [seen, subs] = [await getSeen(env), await getSubs(env)];
   const chats = Object.keys(subs);
@@ -464,6 +461,15 @@ async function notifyNews(env) {
     added = true;
   }
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
+  // daily alive ping (max once per UTC day)
+  if (env.ADMIN_CHAT_ID) {
+    const today = new Date().toISOString().slice(0, 10);
+    const last = await env.BOTSTATE.get("last_ping");
+    if (last !== today) {
+      await env.BOTSTATE.put("last_ping", today);
+      await sendMessage(env, env.ADMIN_CHAT_ID, "✅ worker alive — scrape + webhook OK");
+    }
+  }
   return added;
 }
 
@@ -495,22 +501,12 @@ export default {
     const cron = (event && event.cron) || "";
     try {
       if (cron === "0 * * * *") {
-        await notifyNews(env);
+        await notifyNews(env); // includes daily alive ping
       } else {
         await notifyFast(env);
       }
     } catch (e) {
       await alertAdmin(env, `WORKER notify failed: ${String(e && e.stack || e).slice(0, 500)}`);
-    }
-    // Daily alive ping — max ONE per UTC day, guarded by a KV marker so a
-    // misbehaving cron (or clock quirk) can never spam the admin chat.
-    if (env.ADMIN_CHAT_ID) {
-      const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
-      const last = await env.BOTSTATE.get("last_ping");
-      if (last !== today) {
-        await env.BOTSTATE.put("last_ping", today);
-        await sendMessage(env, env.ADMIN_CHAT_ID, "✅ worker alive — scrape + webhook OK");
-      }
     }
   },
 };

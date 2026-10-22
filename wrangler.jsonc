@@ -6,7 +6,7 @@
   // Cron triggers:
   //   */2  -> notifyFast (grades for subscribers + exam plannings)
   //   0 *  -> notifyNews (faculty news only, top of every hour)
-  "triggers": { "crons": ["*/2 * * * *", "0 * * * *"] },
+  "triggers": { "crons": ["*/5 * * * *", "0 * * * *"] },
   "kv_namespaces": [
     { "binding": "BOTSTATE", "id": "b1099d536f044372be1fb7894fa40d6a" }
   ]
