@@ -179,6 +179,12 @@
   },
   {
    "kind": "Salles",
+   "text": "* Répartition des étudiants  G05 et G06  (ORL)",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_des_etudiants_g05_et_g05_du_11.10.2026_au_31.10.2026.pdf?m=1792925446",
+   "year": "6ème Année"
+  },
+  {
+   "kind": "Salles",
    "text": "* Répartition des étudiants  G03 et G04",
    "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_des_etudiants_g03_et_g04.pdf?m=1792059303",
    "year": "6ème Année"
@@ -222,5 +228,5 @@
    "url": "https://medecine.univ-batna2.dz/news/avis-aux-%C3%A9tudiants-deuxi%C3%A8me-ann%C3%A9e-m%C3%A9decine-15"
   }
  ],
- "scraped_at": "2026-10-24T06:39:25Z"
+ "scraped_at": "2026-10-25T10:51:12Z"
 }
