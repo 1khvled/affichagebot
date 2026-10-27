@@ -217,6 +217,12 @@
  "news": [
   {
    "date": "October 27, 2026",
+   "photo": "",
+   "title": "Convocation à une séance du Conseil de Discipline",
+   "url": "https://medecine.univ-batna2.dz/news/convocation-%C3%A0-une-s%C3%A9ance-du-conseil-de-discipline-3"
+  },
+  {
+   "date": "October 27, 2026",
    "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/repartition.jpg?m=1744295481&itok=u8VGazgk",
    "title": "Répartition troisième année médecine",
    "url": "https://medecine.univ-batna2.dz/news/r%C3%A9partition-troisi%C3%A8me-ann%C3%A9e-m%C3%A9decine-0"
@@ -238,13 +244,7 @@
    "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
    "title": "Avis aux étudiants première année médecine",
    "url": "https://medecine.univ-batna2.dz/news/avis-aux-%C3%A9tudiants-premi%C3%A8re-ann%C3%A9e-m%C3%A9decine-17"
-  },
-  {
-   "date": "October 18, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
-   "title": "Avis aux étudiants de 3ᵉ année Médecine",
-   "url": "https://medecine.univ-batna2.dz/news/avis-aux-%C3%A9tudiants-de-3%E1%B5%89-ann%C3%A9e-m%C3%A9decine-0"
   }
  ],
- "scraped_at": "2026-10-27T10:00:21Z"
+ "scraped_at": "2026-10-27T10:03:24Z"
 }
