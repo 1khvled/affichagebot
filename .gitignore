@@ -7,3 +7,5 @@ __pycache__/
 venv/
 check_token.py
 check_site.py
+
+.wrangler/
