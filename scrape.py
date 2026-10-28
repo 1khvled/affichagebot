@@ -10,7 +10,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from bot import admin_alert, scrape_data, scrape_exams, scrape_listes, scrape_news
+from bot import admin_alert, scrape_data, scrape_exams, scrape_listes
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("affichagebot.scrape")
@@ -27,14 +27,12 @@ def main():
 
     old_data = {}
     old_exams = []
-    old_news = []
     old_listes = []
     try:
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             old_cache = json.load(f)
             old_data = old_cache.get("data", {})
             old_exams = old_cache.get("exams", [])
-            old_news = old_cache.get("news", [])
             old_listes = old_cache.get("listes", [])
     except Exception:
         pass
@@ -53,26 +51,22 @@ def main():
     if exams is None:
         exams = old_exams
         log.warning("exam page unreachable, keeping %d cached exam files", len(exams))
-    news = scrape_news()
-    if news is None:
-        news = old_news
-        log.warning("news unreachable, keeping %d cached news", len(news))
     listes = scrape_listes()
     if listes is None:
         listes = old_listes
         log.warning("listes unreachable, keeping %d cached files", len(listes))
-    if old_data != data or old_exams != exams or old_news != news or old_listes != listes:
+    if old_data != data or old_exams != exams or old_listes != listes:
         payload = {"scraped_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                   "data": data, "exams": exams, "news": news, "listes": listes}
+                   "data": data, "exams": exams, "listes": listes}
         tmp = CACHE_FILE + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=1, sort_keys=True)
         os.replace(tmp, CACHE_FILE)
-        log.info("cache updated (%d modules, %d links, %d exams, %d news, %d listes)",
-                 n_mods, n_links, len(exams), len(news), len(listes))
+        log.info("cache updated (%d modules, %d links, %d exams, %d listes)",
+                 n_mods, n_links, len(exams), len(listes))
     else:
-        log.info("cache unchanged (%d modules, %d links, %d exams, %d news, %d listes)",
-                 n_mods, n_links, len(exams), len(news), len(listes))
+        log.info("cache unchanged (%d modules, %d links, %d exams, %d listes)",
+                 n_mods, n_links, len(exams), len(listes))
 
     # Archive: every file ever seen, with first-seen date. Never shrinks,
     # so removed affichages stay browsable via /history.

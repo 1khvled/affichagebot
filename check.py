@@ -18,10 +18,8 @@ from bot import (
     HELP_TEXT,
     answer_callback,
     broadcast_exams,
-
     get_updates,
     group_markers,
-    handle_actus,
     handle_listes,
     handle_planning,
     handle_recent,
@@ -37,7 +35,6 @@ from bot import (
     scrape_data,
     scrape_exams,
     scrape_listes,
-    scrape_news,
     send_document,
     send_message,
     tag,
@@ -58,16 +55,16 @@ def load_cache():
         with open(CACHE_FILE, "r", encoding="utf-8") as f:
             c = json.load(f)
         data = c.get("data", {})
-        log.info("cache loaded (%s): %d years, %d exams, %d news, %d listes",
+        log.info("cache loaded (%s): %d years, %d exams, %d listes",
                  c.get("scraped_at", "?"), len(data),
-                 len(c.get("exams", [])), len(c.get("news", [])), len(c.get("listes", [])))
-        return data, c.get("exams", []), c.get("news", []), c.get("listes", [])
+                 len(c.get("exams", [])), len(c.get("listes", [])))
+        return data, c.get("exams", []), c.get("listes", [])
     except Exception as e:
         log.warning("no usable cache: %s", e)
-        return None, [], [], []
+        return None, [], []
 
 
-def handle_update(item, state, cached_data, cached_exams, cached_news, cached_listes):
+def handle_update(item, state, cached_data, cached_exams, cached_listes):
     update_id = item["update_id"]
     msg = item.get("message")
     cb = item.get("callback_query")
@@ -87,8 +84,6 @@ def handle_update(item, state, cached_data, cached_exams, cached_news, cached_li
             handle_recent(chat_id, cached_data)
         elif text.startswith("/planning"):
             handle_planning(chat_id, cached_exams)
-        elif text.startswith("/actus"):
-            handle_actus(chat_id, cached_news)
         elif text.startswith("/listes"):
             handle_listes(chat_id, cached_listes)
         elif text.startswith("/help"):
@@ -217,12 +212,11 @@ def main():
     if normalize_subs(state):
         save_state(state)
 
-    cached_data, cached_exams, cached_news, cached_listes = load_cache()
+    cached_data, cached_exams, cached_listes = load_cache()
     if cached_data is None:
         log.warning("no cache found, one live scrape as fallback")
         cached_data = scrape_data() or {}
         cached_exams = scrape_exams() or []
-        cached_news = scrape_news() or []
         cached_listes = scrape_listes() or []
 
     if not state.get("seen_links") and cached_data:
@@ -236,7 +230,7 @@ def main():
     if updates and updates.get("ok"):
         for item in updates.get("result", []):
             try:
-                handle_update(item, state, cached_data, cached_exams, cached_news, cached_listes)
+                handle_update(item, state, cached_data, cached_exams, cached_listes)
             except Exception:
                 log.exception("update failed, offset advanced anyway")
                 state["last_update_id"] = item["update_id"] + 1
@@ -268,8 +262,6 @@ def main():
     n_ex = broadcast_exams(state, cached_exams)
     if n_ex:
         log.info("broadcast %d new exam files", n_ex)
-    # News is NOT auto-broadcast here — handled by the worker's hourly cron
-    # (0 * * * *). On-demand /actus still works. Lists never auto-broadcast.
     log.info("check done.")
 
 

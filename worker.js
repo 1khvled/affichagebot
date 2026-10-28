@@ -1,6 +1,6 @@
 // Affichage Bot - Cloudflare Worker front-end (instant replies, free tier).
 // Telegram webhook POSTs updates here. PDFs pass by URL. KV binding: BOTSTATE.
-// Secrets: BOT_TOKEN, ADMIN_CHAT_ID. Cron: */2 * * * * . Cache: repo cache.json.
+// Secrets: BOT_TOKEN, ADMIN_CHAT_ID. Cron: */5 * * * * . Cache: repo cache.json.
 
 const CACHE_URL = "https://raw.githubusercontent.com/1khvled/affichagebot/main/cache.json";
 const STATE_URL = "https://raw.githubusercontent.com/1khvled/affichagebot/main/bot_state.json";
@@ -33,18 +33,14 @@ async function getCache() {
   const r = await fetch(CACHE_URL, { cf: { cacheTtl: 300 } });
   if (!r.ok) return {};
   const j = await r.json();
-  // attach exams/news/listes so callers don't re-fetch cache.json
+  // attach exams/listes so callers don't re-fetch cache.json
   const c = j.data || {};
   c.exams = j.exams || [];
-  c.news = j.news || [];
   c.listes = j.listes || [];
   return c;
 }
 async function getExams() {
   try { return (await getCache()).exams || []; } catch { return []; }
-}
-async function getNews() {
-  try { return (await getCache()).news || []; } catch { return []; }
 }
 async function getListes() {
   try { return (await getCache()).listes || []; } catch { return []; }
@@ -60,17 +56,6 @@ async function doPlanning(env, chat, exams) {
   for (const [year, items] of Object.entries(byYear)) {
     resp += `\n${year}:\n`;
     for (const ex of items.slice(0, 6)) resp += `  [${ex.kind || "Examen"}] ${ex.text || ""}\n  ${ex.url || ""}\n`;
-  }
-  await sendMessage(env, chat, resp.slice(0, 4000));
-}
-async function doActus(env, chat, news) {
-  if (!news.length) {
-    await sendMessage(env, chat, "📰 Aucune nouveauté en ce moment.");
-    return;
-  }
-  let resp = "📰 Dernières nouveautés de la faculté:\n";
-  for (const item of news.slice(0, 8)) {
-    resp += `\n${item.title || ""}\n📅 ${item.date || ""}\n${item.url || ""}\n`;
   }
   await sendMessage(env, chat, resp.slice(0, 4000));
 }
@@ -181,7 +166,6 @@ const HELP =
   "/search <mot> — chercher (ex: /search cardio)\n" +
   "/recent — derniers fichiers publiés\n" +
   "/planning — plannings des examens\n" +
-  "/actus — dernières nouveautés de la faculté\n" +
   "/listes — listes étudiants / salles\n" +
   "/help — ce message";
 
@@ -255,7 +239,7 @@ async function handleUpdate(env, u) {
     const text = msg.text.trim();
     if (text === "/start") {
       await sendMessage(env, chat,
-        "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\nCommandes: /subs • /search • /recent • /planning • /actus • /listes • /help",
+        "Bienvenue! 🎓\nSélectionnez l'année à surveiller:\n\nCommandes: /subs • /search • /recent • /planning • /listes • /help",
         { inline_keyboard: [
           [{ text: "1ère Année", callback_data: "y_1" }, { text: "2ème Année", callback_data: "y_2" }],
           [{ text: "3ème Année", callback_data: "y_3" }, { text: "4ème Année", callback_data: "y_4" }],
@@ -289,8 +273,6 @@ async function handleUpdate(env, u) {
       await doRecent(env, chat, await getCache());
     } else if (text.startsWith("/planning")) {
       await doPlanning(env, chat, await getExams());
-    } else if (text.startsWith("/actus")) {
-      await doActus(env, chat, await getNews());
     } else if (text.startsWith("/listes")) {
       await doListes(env, chat, await getListes());
     } else if (text.startsWith("/help")) {
@@ -403,8 +385,8 @@ async function handleUpdate(env, u) {
 }
 
 // Fast path (every 5 min): grades for subscribers + exam plannings broadcast.
-// Does NOT touch news — news has its own hourly cadence (notifyNews).
 // Fetches cache.json ONCE per run (exams derived from it) to save KV/HTTP ops.
+// Also performs the daily alive ping (guarded by a last_ping marker).
 async function notifyFast(env) {
   const [cache, seen, subs] = [await getCache(), await getSeen(env), await getSubs(env)];
   const exams = (cache && cache.exams) ? cache.exams : (await getExams());
@@ -432,32 +414,6 @@ async function notifyFast(env) {
       await sendDoc(env, chat, ex.url, `${ex.year || ""} - ${ex.kind || "Examen"}`);
     }
     seen.add(ex.url);
-    added = true;
-  }
-  if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
-  return added;
-}
-
-// News-only path (hourly): broadcasts faculty news to all users.
-// Runs on its own cron so news cadence is decoupled from grades/exams.
-// Also performs the daily alive ping (guarded by last_ping marker) so the
-// fast cron no longer spends KV reads on it.
-async function notifyNews(env) {
-  const [seen, subs] = [await getSeen(env), await getSubs(env)];
-  const chats = Object.keys(subs);
-  const news = await getNews();
-  let added = false;
-  for (const item of news) {
-    if (!item.url || seen.has(item.url)) continue;
-    const text = `📰 NOUVEAUTÉ\n${item.title || ""}\n📅 ${item.date || ""}\n${item.url}`;
-    for (const chat of chats) {
-      if (item.photo) {
-        await tg(env, "sendPhoto", { chat_id: chat, photo: item.photo, caption: text.slice(0, 1000) });
-      } else {
-        await sendMessage(env, chat, text);
-      }
-    }
-    seen.add(item.url);
     added = true;
   }
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
@@ -498,13 +454,8 @@ export default {
     return new Response("affichage bot worker alive. Set Telegram webhook to this URL.");
   },
   async scheduled(event, env) {
-    const cron = (event && event.cron) || "";
     try {
-      if (cron === "0 * * * *") {
-        await notifyNews(env); // includes daily alive ping
-      } else {
-        await notifyFast(env);
-      }
+      await notifyFast(env);
     } catch (e) {
       await alertAdmin(env, `WORKER notify failed: ${String(e && e.stack || e).slice(0, 500)}`);
     }

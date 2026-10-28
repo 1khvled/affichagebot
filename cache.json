@@ -214,37 +214,5 @@
    "year": "6ème Année"
   }
  ],
- "news": [
-  {
-   "date": "October 27, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
-   "title": "Programme de neurologie 4ème année médecine (G03-G04)",
-   "url": "https://medecine.univ-batna2.dz/news/programme-de-neurologie-4%C3%A8me-ann%C3%A9e-m%C3%A9decine-g03-g04"
-  },
-  {
-   "date": "October 27, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/images_1.jpg?m=1662975833&itok=8BDwcD9K",
-   "title": "Convocation à une séance du Conseil de Discipline",
-   "url": "https://medecine.univ-batna2.dz/news/convocation-%C3%A0-une-s%C3%A9ance-du-conseil-de-discipline-3"
-  },
-  {
-   "date": "October 27, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/repartition.jpg?m=1744295481&itok=u8VGazgk",
-   "title": "Répartition troisième année médecine",
-   "url": "https://medecine.univ-batna2.dz/news/r%C3%A9partition-troisi%C3%A8me-ann%C3%A9e-m%C3%A9decine-0"
-  },
-  {
-   "date": "October 22, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
-   "title": "Avis aux étudiants troisième année médecine",
-   "url": "https://medecine.univ-batna2.dz/news/avis-aux-%C3%A9tudiants-troisi%C3%A8me-ann%C3%A9e-m%C3%A9decine-8"
-  },
-  {
-   "date": "October 22, 2026",
-   "photo": "https://medecine.univ-batna2.dz/sites/default/files/styles/os_square_100_100/public/medecine/files/avis-aux-etudiants_02_1.png?m=1790671869&itok=2APe-RW3",
-   "title": "Programme des cours Gastro-enterologie G05-G06",
-   "url": "https://medecine.univ-batna2.dz/news/programme-des-cours-gastro-enterologie-g05-g06"
-  }
- ],
  "scraped_at": "2026-10-27T23:29:18Z"
 }

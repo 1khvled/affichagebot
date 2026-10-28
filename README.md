@@ -1,7 +1,7 @@
 # Affichage Bot 🎓
 
 Telegram bot that watches the **Batna 2 Faculty of Medicine** website and notifies
-students the moment grades, exam plannings, student lists, or faculty news appear.
+students the moment grades, exam plannings, or student lists appear.
 
 **Bot:** [@afffichagebot](https://t.me/afffichagebot) · **Langue:** Français · **Coût:** 0 DA (GitHub + Cloudflare free tiers, no card)
 
@@ -15,11 +15,10 @@ students the moment grades, exam plannings, student lists, or faculty news appea
 | `/search <mot>` | Search modules + files, e.g. `/search cardio` |
 | `/recent` | Latest published files, newest first |
 | `/planning` | Exam plannings (Examen + ECOS) per year |
-| `/actus` | Latest faculty news (Nouveautés) |
 | `/listes` | Student lists (alphabétique / mérite / stages / salles) |
 | `/help` | Help |
 
-Push alerts: 🚨 new grades (subscribers only) · 📅 plannings, 📋 lists, 📰 news (broadcast to **all** users).
+Push alerts: 🚨 new grades (subscribers only) · 📅 plannings (broadcast to **all** users). Lists are on-demand via `/listes`.
 
 ## How it works
 
@@ -30,7 +29,7 @@ Faculty site ──5 min──▶ scrape.py ──▶ cache.json (in repo)
                         ▼
 Telegram ──webhook──▶ Cloudflare Worker ──reads──▶ cache.json (raw GitHub)
    (instant)               │                        BOTSTATE (KV: subs + seen)
-                           └──cron */2──▶ new-PDF notifications + alive ping
+                           └──cron */5──▶ new-PDF notifications + alive ping
 ```
 
 - **Scraping is centralized** (`scrape.py`, GitHub Actions every 5 min) into
@@ -65,7 +64,7 @@ Telegram ──webhook──▶ Cloudflare Worker ──reads──▶ cache.jso
    `workflow_dispatch` externally (e.g. cron-job.org → dispatch API).
 2. **Worker (Cloudflare, free, no card):** Workers & Pages → Create Worker →
    paste `worker.js`. Add KV binding `BOTSTATE` (new namespace), secrets
-   `BOT_TOKEN` + `ADMIN_CHAT_ID`, cron trigger `*/2 * * * *`, enable
+   `BOT_TOKEN` + `ADMIN_CHAT_ID`, cron trigger `*/5 * * * *`, enable
    `workers.dev`, then set the webhook:
    `https://api.telegram.org/bot<TOKEN>/setWebhook?url=<WORKER_URL>`
 3. Disable `answer.yml` (Actions tab → … → Disable workflow) once the
@@ -79,7 +78,7 @@ Local dev: `copy .env.example .env` → fill `BOT_TOKEN` → `python check.py`
 | File | Role |
 |---|---|
 | `worker.js` | Live bot: webhook replies + notify cron (Cloudflare) |
-| `bot.py` | Scrapers (`notes`/`exams`/`news`/`listes`) + shared logic + polling loop |
+| `bot.py` | Scrapers (`notes`/`exams`/`listes`) + shared logic + polling loop |
 | `check.py` | One-shot answer run (backup path; workflow disabled) |
 | `scrape.py` | 5-min cache builder (`cache.json` + `history.json`) |
 | `app.py`, `Procfile`, `render.yaml` | Legacy Render path (kept as fallback) |

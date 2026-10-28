@@ -3,10 +3,9 @@
   "main": "worker.js",
   "compatibility_date": "2025-01-01",
   "workers_dev": true,
-  // Cron triggers:
-  //   */2  -> notifyFast (grades for subscribers + exam plannings)
-  //   0 *  -> notifyNews (faculty news only, top of every hour)
-  "triggers": { "crons": ["*/5 * * * *", "0 * * * *"] },
+  // Cron trigger:
+  //   */5  -> notifyFast (grades for subscribers + exam plannings)
+  "triggers": { "crons": ["*/5 * * * *"] },
   "kv_namespaces": [
     { "binding": "BOTSTATE", "id": "b1099d536f044372be1fb7894fa40d6a" }
   ]
