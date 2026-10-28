@@ -33,10 +33,12 @@ async function getCache() {
   const r = await fetch(CACHE_URL, { cf: { cacheTtl: 300 } });
   if (!r.ok) return {};
   const j = await r.json();
-  // attach exams/listes so callers don't re-fetch cache.json
+  // attach exams/listes without polluting the year/module listing
   const c = j.data || {};
-  c.exams = j.exams || [];
-  c.listes = j.listes || [];
+  Object.defineProperties(c, {
+    exams: { value: j.exams || [], enumerable: false },
+    listes: { value: j.listes || [], enumerable: false },
+  });
   return c;
 }
 async function getExams() {
