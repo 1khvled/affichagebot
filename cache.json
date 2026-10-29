@@ -118,6 +118,78 @@
  ],
  "listes": [
   {
+   "kind": "Alphabétique",
+   "text": "* liste par groupes section 1",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_section_1.pdf?m=1791988050",
+   "year": "1ère Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "* liste par groupes section2",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_section2.pdf?m=1791988106",
+   "year": "1ère Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "Liste des étudiants   2ème Année",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_deuxieme_annee_par_sections_et_par_groupes.pdf?m=1791187859",
+   "year": "2ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "* Section1",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/section_1_3eme_annee_medecine_.pdf?m=1790084120",
+   "year": "3ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "* Section2",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/section_2_3eme_annee_medecine_0.pdf?m=1790084159",
+   "year": "3ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "* Section3",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/section_3_3eme_annee_medecine.pdf?m=1790084201",
+   "year": "3ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "Liste par groupes",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_quatrieme_annee_medecine_0.pdf?m=1792420235",
+   "year": "4ème Année"
+  },
+  {
+   "kind": "Mérite",
+   "text": "Liste par ordre de mérite G05 et G06",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/quatrieme_annee_par_ordre_de_merite.pdf?m=1789998632",
+   "year": "4ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "Lste par ordre alphabétique",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_cinquieme_annee_par_ordre_alphabetique.pdf?m=1789984786",
+   "year": "5ème Année"
+  },
+  {
+   "kind": "Mérite",
+   "text": "Liste par ordre de mérite",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/img20260921_11541088.pdf?m=1789984799",
+   "year": "5ème Année"
+  },
+  {
+   "kind": "Mérite",
+   "text": "Liste  sixième année par ordre de mérite",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_sixieme_par_ordre_de_merite.pdf?m=1790000488",
+   "year": "6ème Année"
+  },
+  {
+   "kind": "Stages",
+   "text": "Terrain de stage UMC G01 et G02",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/terrain_de_stage_umc_g01_et_g02.pdf?m=1790086255",
+   "year": "6ème Année"
+  },
+  {
    "kind": "Salles",
    "text": "Répartition des salles cycle clinique du 02.11.2026",
    "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_des_salles_cycle_clinique_du_02.11.2026.pdf?m=1793273329",
@@ -148,5 +220,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-10-29T16:58:22Z"
+ "scraped_at": "2026-10-29T16:59:54Z"
 }
