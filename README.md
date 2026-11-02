@@ -43,6 +43,16 @@ Telegram ──webhook──▶ Cloudflare Worker ──reads──▶ cache.jso
 - `answer.yml` (old minute-poller) is **disabled** — webhook + polling conflict
   (Telegram 409). `scrape.yml` + `watchdog.yml` stay on.
 
+### Operational notes
+
+- Keep an external `workflow_dispatch` trigger at **5 minutes**, not every
+  minute: the extra runs only add site load and concurrency cancellations.
+- The scrape commit step is race-safe: if `cache.json` was pushed by another
+  run, it resets to `origin/main`, re-scrapes, and retries instead of failing
+  and sending "ALERTE: scrape a ECHOUE".
+- Telegram API failures are logged as `tg api error <method> <code>
+  <description>`. Inspect them with `wrangler tail affichagebot`.
+
 ## Faculty quirks encoded here
 
 - Years 1–3 are **promotion-wide**: no groups, ever → single "Tous" button,
