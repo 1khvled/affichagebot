@@ -155,8 +155,20 @@
   },
   {
    "kind": "Alphabétique",
-   "text": "Liste par groupes",
-   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_par_groupes_quatrieme_annee_medecine_0.pdf?m=1792420235",
+   "text": "Liste G01 et G02",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_g01_g02.pdf?m=1793630212",
+   "year": "4ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "Liste G03 et  G04",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_g03_et_g04.pdf?m=1793630303",
+   "year": "4ème Année"
+  },
+  {
+   "kind": "Alphabétique",
+   "text": "Liste G05 et  G06",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/liste_g5_et_g06_0.pdf?m=1793630345",
    "year": "4ème Année"
   },
   {
@@ -220,5 +232,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-01T22:12:24Z"
+ "scraped_at": "2026-11-02T14:39:17Z"
 }
