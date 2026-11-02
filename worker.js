@@ -15,7 +15,11 @@ async function tg(env, method, payload) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    return await r.json();
+    const j = await r.json();
+    if (!j.ok) {
+      console.log("tg api error", method, j.error_code, String(j.description || "").slice(0, 200));
+    }
+    return j;
   } catch (e) {
     console.log("tg error", method, String(e).slice(0, 200));
     return {};
