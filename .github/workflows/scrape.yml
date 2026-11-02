@@ -30,17 +30,37 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           ADMIN_CHAT_ID: ${{ secrets.ADMIN_CHAT_ID }}
+      # The external dispatcher can start runs close together, so two scrapes
+      # may race to push cache.json. Instead of failing on a rebase conflict,
+      # reset to origin and re-scrape: the last writer wins with fresh data.
       - name: Commit cache if changed
         run: |
           git config user.name "affichage-bot"
           git config user.email "affichage-bot@users.noreply.github.com"
           git add cache.json history.json
-          if [ -n "$(git status --porcelain cache.json history.json)" ]; then
-            git commit -m "update cache [skip ci]"
-            git pull --rebase origin main && git push || (sleep 15; git pull --rebase origin main && git push)
-          else
+          if [ -z "$(git status --porcelain cache.json history.json)" ]; then
             echo "cache unchanged"
+            exit 0
           fi
+          git commit -m "update cache [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "cache pushed (attempt $attempt)"
+              exit 0
+            fi
+            echo "push rejected (attempt $attempt); refreshing from origin and re-scraping"
+            git fetch origin main
+            git reset --hard origin/main
+            python scrape.py
+            git add cache.json history.json
+            if git diff --cached --quiet; then
+              echo "cache unchanged after refresh"
+              exit 0
+            fi
+            git commit -m "update cache [skip ci]"
+          done
+          echo "::error::could not push cache after 3 attempts"
+          exit 1
       - name: Alert admin on failure
         if: failure()
         run: |
