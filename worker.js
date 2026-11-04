@@ -392,7 +392,7 @@ async function handleUpdate(env, u) {
 
 // Fast path (every 5 min): grades for subscribers + exam plannings broadcast.
 // Fetches cache.json ONCE per run (exams derived from it) to save KV/HTTP ops.
-// Also performs the daily alive ping, timed by the clock so it costs zero KV.
+// No daily heartbeat: the only sends are new grades/exam plannings.
 async function notifyFast(env) {
   const [cache, seen, subs] = [await getCache(), await getSeen(env), await getSubs(env)];
   const exams = (cache && cache.exams) ? cache.exams : (await getExams());
@@ -423,13 +423,6 @@ async function notifyFast(env) {
     added = true;
   }
   if (added) await env.BOTSTATE.put("seen", JSON.stringify([...seen]));
-  // daily alive ping: only the 09:00 UTC run fires (no KV read/write at all)
-  if (env.ADMIN_CHAT_ID) {
-    const now = new Date();
-    if (now.getUTCHours() === 9 && now.getUTCMinutes() < 5) {
-      await sendMessage(env, env.ADMIN_CHAT_ID, "✅ worker alive — scrape + webhook OK");
-    }
-  }
   return added;
 }
 
