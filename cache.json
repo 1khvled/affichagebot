@@ -40,7 +40,18 @@
    "UET5: Pharmacologie clinique": []
   },
   "4ème Année": {
-   "* Cardiologie": [],
+   "* Cardiologie": [
+    {
+     "kind": "Notes",
+     "text": "Notes G01et G02",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/notes_g01_g02_cardiologie.pdf?m=1793889950"
+    },
+    {
+     "kind": "CT",
+     "text": "CT",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_g01_et_g02_3.pdf?m=1793889962"
+    }
+   ],
    "Neurologie": [],
    "Pneumologie": [
     {
@@ -50,7 +61,18 @@
     }
    ],
    "Unité Gastro-Hépato - enterologie": [],
-   "Unité: Hémato-oncologie": [],
+   "Unité: Hémato-oncologie": [
+    {
+     "kind": "Notes",
+     "text": "Notes G05 et G06",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/onco_hematologie_g05_et_g06_4.pdf?m=1793890014"
+    },
+    {
+     "kind": "CT",
+     "text": "CT G05 et G06",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_onco_hematologie_g05_et_g06_2.pdf?m=1793890042"
+    }
+   ],
    "Unité: Maladies infectieuses": []
   },
   "5ème Année": {
@@ -232,5 +254,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-02T22:20:32Z"
+ "scraped_at": "2026-11-05T14:48:15Z"
 }

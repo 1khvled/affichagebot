@@ -23,6 +23,38 @@
    "year": "6ème Année",
    "module": "Médecine légale",
    "first_seen": "2026-10-14"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/notes_g01_g02_cardiologie.pdf?m=1793889950",
+   "text": "Notes G01et G02",
+   "kind": "Notes",
+   "year": "4ème Année",
+   "module": "* Cardiologie",
+   "first_seen": "2026-11-05"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_g01_et_g02_3.pdf?m=1793889962",
+   "text": "CT",
+   "kind": "CT",
+   "year": "4ème Année",
+   "module": "* Cardiologie",
+   "first_seen": "2026-11-05"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/onco_hematologie_g05_et_g06_4.pdf?m=1793890014",
+   "text": "Notes G05 et G06",
+   "kind": "Notes",
+   "year": "4ème Année",
+   "module": "Unité: Hémato-oncologie",
+   "first_seen": "2026-11-05"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_onco_hematologie_g05_et_g06_2.pdf?m=1793890042",
+   "text": "CT G05 et G06",
+   "kind": "CT",
+   "year": "4ème Année",
+   "module": "Unité: Hémato-oncologie",
+   "first_seen": "2026-11-05"
   }
  ]
 }
