@@ -20,7 +20,13 @@
    ]
   },
   "2ème Année": {
-   "UEI: Appareil cardiovasculaire respiratoire et organes hémato-poiétique": [],
+   "UEI: Appareil cardiovasculaire respiratoire et organes hémato-poiétique": [
+    {
+     "kind": "CT",
+     "text": "CT",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_cardio_respiratoire_2eme.pdf?m=1794301085"
+    }
+   ],
    "UEI: Appareil digestif": [],
    "UEI: Appareil endocrinien et de la reproduction": [],
    "UEI: Appareil nerveux et organes des sens": [],
@@ -254,5 +260,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-09T20:06:20Z"
+ "scraped_at": "2026-11-10T08:58:17Z"
 }
