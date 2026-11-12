@@ -63,6 +63,30 @@
    "year": "2ème Année",
    "module": "UEI: Appareil cardiovasculaire respiratoire et organes hémato-poiétique",
    "first_seen": "2026-11-10"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ophtalmologie_g05_et_g06_0.pdf?m=1794492902",
+   "text": "Notes G05 et G06",
+   "kind": "Notes",
+   "year": "6ème Année",
+   "module": "Ophtalmologie",
+   "first_seen": "2026-11-12"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/orl_g05_et_g06.pdf?m=1794492870",
+   "text": "Notes G05 et G06",
+   "kind": "Notes",
+   "year": "6ème Année",
+   "module": "ORL",
+   "first_seen": "2026-11-12"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_orl_g05_et_g06_2.pdf?m=1794492884",
+   "text": "CT  G05 et G06",
+   "kind": "CT",
+   "year": "6ème Année",
+   "module": "ORL",
+   "first_seen": "2026-11-12"
   }
  ]
 }

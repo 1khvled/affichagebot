@@ -99,8 +99,25 @@
      "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/medecine_legale_2.pdf?m=1782050775"
     }
    ],
-   "ORL": [],
-   "Ophtalmologie": [],
+   "ORL": [
+    {
+     "kind": "Notes",
+     "text": "Notes G05 et G06",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/orl_g05_et_g06.pdf?m=1794492870"
+    },
+    {
+     "kind": "CT",
+     "text": "CT  G05 et G06",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_orl_g05_et_g06_2.pdf?m=1794492884"
+    }
+   ],
+   "Ophtalmologie": [
+    {
+     "kind": "Notes",
+     "text": "Notes G05 et G06",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ophtalmologie_g05_et_g06_0.pdf?m=1794492902"
+    }
+   ],
    "Personnes âgés": [],
    "Santé au travail et environnement": [],
    "Urgence médicale": []
@@ -266,5 +283,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-11T08:43:17Z"
+ "scraped_at": "2026-11-12T14:15:16Z"
 }
