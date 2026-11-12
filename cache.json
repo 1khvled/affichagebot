@@ -116,6 +116,11 @@
      "kind": "Notes",
      "text": "Notes G05 et G06",
      "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ophtalmologie_g05_et_g06_0.pdf?m=1794492902"
+    },
+    {
+     "kind": "CT",
+     "text": "CT G05 et G06",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_ophtalmologie_g05_et_g06_2.pdf?m=1794493415"
     }
    ],
    "Personnes âgés": [],
@@ -283,5 +288,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-12T14:15:16Z"
+ "scraped_at": "2026-11-12T14:25:18Z"
 }
