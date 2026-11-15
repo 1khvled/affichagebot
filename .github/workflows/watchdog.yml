@@ -1,8 +1,9 @@
 name: watchdog
 
 # Daily monitor: verifies the scrape loop actually ran and succeeded
-# (the worker itself sends a daily alive ping + instant failure alerts).
-# Sends a Telegram alert to the admin if the last run failed or is too old.
+# (the worker itself sends instant failure alerts; it does not ping daily).
+# Sends a Telegram alert to the admin if the last completed run failed or is
+# older than 3h. In-progress runs are ignored to avoid false alarms.
 on:
   schedule:
     - cron: "0 8 * * *"
@@ -14,17 +15,28 @@ jobs:
     permissions:
       actions: read
     steps:
-      - name: Check last check-run
+      - name: Check last completed scrape run
         run: |
-          RUN=$(gh api "repos/1khvled/affichagebot/actions/workflows/scrape.yml/runs?per_page=1" \
-            --jq '.workflow_runs[0] | "\(.conclusion)|\(.updated_at)|\(.html_url)"')
+          # Ignore queued/in-progress runs: the external dispatcher starts
+          # scrape every minute, so the newest run is often still running
+          # when this daily check fires. Looking at it caused false alerts.
+          RUN=$(gh api "repos/1khvled/affichagebot/actions/workflows/scrape.yml/runs?status=completed&per_page=1" \
+            --jq '.workflow_runs[0] | "\(.conclusion)|\(.updated_at)|\(.html_url)"' || true)
+          if [ -z "$RUN" ]; then
+            echo "no completed scrape run found (ignoring)"
+            exit 0
+          fi
           CONC="${RUN%%|*}"; REST="${RUN#*|}"; TS="${REST%%|*}"; URL="${REST##*|}"
+          if [ -z "$TS" ] || [ "$TS" = "null" ]; then
+            echo "no usable timestamp (ignoring): $RUN"
+            exit 0
+          fi
           AGE=$(( $(date +%s) - $(date -d "$TS" +%s) ))
-          echo "last run: conclusion=$CONC age=${AGE}s url=$URL"
+          echo "last completed run: conclusion=$CONC age=${AGE}s url=$URL"
           if [ "$CONC" != "success" ] || [ "$AGE" -gt 10800 ]; then
             curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
               -d chat_id="$ADMIN_CHAT_ID" \
-              -d text="WATCHDOG: probleme scrape (dernier run: $CONC, il y a ${AGE}s). $URL" > /dev/null
+              -d text="WATCHDOG: probleme scrape (dernier run termine: $CONC, il y a ${AGE}s). $URL" > /dev/null
             echo "ALERT SENT"
           else
             echo "OK"

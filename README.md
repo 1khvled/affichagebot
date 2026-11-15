@@ -29,7 +29,7 @@ Faculty site ──5 min──▶ scrape.py ──▶ cache.json (in repo)
                         ▼
 Telegram ──webhook──▶ Cloudflare Worker ──reads──▶ cache.json (raw GitHub)
    (instant)               │                        BOTSTATE (KV: subs + seen)
-                           └──cron */5──▶ new-PDF notifications + alive ping
+                           └──cron */5──▶ new-PDF notifications only
 ```
 
 - **Scraping is centralized** (`scrape.py`, GitHub Actions every 5 min) into

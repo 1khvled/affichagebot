@@ -396,20 +396,32 @@ async function handleUpdate(env, u) {
 async function notifyFast(env) {
   const [cache, seen, subs] = [await getCache(), await getSeen(env), await getSubs(env)];
   const exams = (cache && cache.exams) ? cache.exams : (await getExams());
+  // Snapshot seen first: a new link must reach every matching subscriber
+  // before it is marked as delivered. The old code added it to `seen` after
+  // the first chat, so later subscribers were silently skipped.
+  const alreadySeen = new Set(seen);
+  const delivered = new Set();
+  const sentToChat = new Set();
   let added = false;
   for (const [chat, list] of Object.entries(subs)) {
     for (const sub of list) {
       for (const link of (((cache[sub.year] || {})[sub.module]) || [])) {
-        if (!matchesSub(link, sub) || seen.has(link.url)) continue;
+        if (!matchesSub(link, sub) || alreadySeen.has(link.url)) continue;
+        // same chat may have overlapping subscriptions (ALL + G05-G06)
+        const key = `${chat}\u0000${link.url}`;
+        if (sentToChat.has(key)) continue;
         const trk = (sub.track && sub.track !== "ALL") ? `\nFilière: ${trackLabel(sub.track)}` : "";
-        await sendMessage(env, chat,
+        const msg = await sendMessage(env, chat,
           `🚨 NOUVEL AFFICHAGE!\nAnnée: ${sub.year}\nModule: ${sub.module}\nGroupe: ${sub.group}${trk}\nFichier: ${tag(link)}${link.text}`);
+        if (!msg || !msg.ok) continue;
         await sendDoc(env, chat, link.url, `${sub.year} - ${sub.module} (${sub.group})`);
-        seen.add(link.url);
+        sentToChat.add(key);
+        delivered.add(link.url);
         added = true;
       }
     }
   }
+  for (const url of delivered) seen.add(url);
   // exam plannings: broadcast to EVERY known user
   const chats = Object.keys(subs);
   for (const ex of (exams || [])) {
