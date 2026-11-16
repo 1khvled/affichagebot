@@ -95,6 +95,22 @@
    "year": "6ème Année",
    "module": "Ophtalmologie",
    "first_seen": "2026-11-12"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/medecine_de_travail_1.pdf?m=1794839136",
+   "text": "Notes G03 et G04",
+   "kind": "Notes",
+   "year": "6ème Année",
+   "module": "Santé au travail et environnement",
+   "first_seen": "2026-11-16"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_mdecine_de_travail.pdf?m=1794839152",
+   "text": "CT G03 et G04",
+   "kind": "CT",
+   "year": "6ème Année",
+   "module": "Santé au travail et environnement",
+   "first_seen": "2026-11-16"
   }
  ]
 }

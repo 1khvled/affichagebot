@@ -124,7 +124,18 @@
     }
    ],
    "Personnes âgés": [],
-   "Santé au travail et environnement": [],
+   "Santé au travail et environnement": [
+    {
+     "kind": "Notes",
+     "text": "Notes G03 et G04",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/medecine_de_travail_1.pdf?m=1794839136"
+    },
+    {
+     "kind": "CT",
+     "text": "CT G03 et G04",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_mdecine_de_travail.pdf?m=1794839152"
+    }
+   ],
    "Urgence médicale": []
   }
  },
@@ -288,5 +299,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-15T16:22:14Z"
+ "scraped_at": "2026-11-16T14:26:18Z"
 }
