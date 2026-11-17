@@ -111,6 +111,22 @@
    "year": "6ème Année",
    "module": "Santé au travail et environnement",
    "first_seen": "2026-11-16"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/img20261117_15350424.pdf?m=1794926280",
+   "text": "Notes G01 et G02",
+   "kind": "Notes",
+   "year": "5ème Année",
+   "module": "Unité: Pédiatrie",
+   "first_seen": "2026-11-17"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_pediatrie_g01_et_g02.pdf?m=1794926305",
+   "text": "CT G01 et G02",
+   "kind": "CT",
+   "year": "5ème Année",
+   "module": "Unité: Pédiatrie",
+   "first_seen": "2026-11-17"
   }
  ]
 }

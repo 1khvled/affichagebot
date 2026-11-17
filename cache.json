@@ -85,7 +85,18 @@
    "Gynécologie - Obstétrique": [],
    "Unité : Appareil locomoteur": [],
    "Unité: Maladies métaboliques et endocrinologie": [],
-   "Unité: Pédiatrie": [],
+   "Unité: Pédiatrie": [
+    {
+     "kind": "Notes",
+     "text": "Notes G01 et G02",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/img20261117_15350424.pdf?m=1794926280"
+    },
+    {
+     "kind": "CT",
+     "text": "CT G01 et G02",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_pediatrie_g01_et_g02.pdf?m=1794926305"
+    }
+   ],
    "Unité: Santé Mentale": []
   },
   "6ème Année": {
@@ -299,5 +310,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-16T14:26:18Z"
+ "scraped_at": "2026-11-17T14:39:15Z"
 }
