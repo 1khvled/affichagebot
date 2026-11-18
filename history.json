@@ -127,6 +127,22 @@
    "year": "5ème Année",
    "module": "Unité: Pédiatrie",
    "first_seen": "2026-11-17"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/notes_infect_g03-g04.pdf?m=1795011850",
+   "text": "Notes G03-G04",
+   "kind": "Notes",
+   "year": "4ème Année",
+   "module": "Unité: Maladies infectieuses",
+   "first_seen": "2026-11-18"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_infectiologie_g03-04_0.pdf?m=1795011868",
+   "text": "CT g03-g04",
+   "kind": "CT",
+   "year": "4ème Année",
+   "module": "Unité: Maladies infectieuses",
+   "first_seen": "2026-11-18"
   }
  ]
 }

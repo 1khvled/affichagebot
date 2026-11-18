@@ -79,7 +79,18 @@
      "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_onco_hematologie_g05_et_g06_2.pdf?m=1793890042"
     }
    ],
-   "Unité: Maladies infectieuses": []
+   "Unité: Maladies infectieuses": [
+    {
+     "kind": "Notes",
+     "text": "Notes G03-G04",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/notes_infect_g03-g04.pdf?m=1795011850"
+    },
+    {
+     "kind": "CT",
+     "text": "CT g03-g04",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_infectiologie_g03-04_0.pdf?m=1795011868"
+    }
+   ]
   },
   "5ème Année": {
    "Gynécologie - Obstétrique": [],
@@ -310,5 +321,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-17T14:39:15Z"
+ "scraped_at": "2026-11-18T14:25:13Z"
 }
