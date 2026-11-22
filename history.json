@@ -143,6 +143,22 @@
    "year": "4ème Année",
    "module": "Unité: Maladies infectieuses",
    "first_seen": "2026-11-18"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_appareillocomoteur_g05_et_g06.pdf?m=1795353327",
+   "text": "Notes G05 et G06",
+   "kind": "Notes",
+   "year": "5ème Année",
+   "module": "Unité : Appareil locomoteur",
+   "first_seen": "2026-11-22"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_appareillocomoteur_g05_et_g06_0.pdf?m=1795353346",
+   "text": "CT G5 G06",
+   "kind": "CT",
+   "year": "5ème Année",
+   "module": "Unité : Appareil locomoteur",
+   "first_seen": "2026-11-22"
   }
  ]
 }
