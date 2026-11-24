@@ -167,6 +167,22 @@
    "year": "5ème Année",
    "module": "Unité : Appareil locomoteur",
    "first_seen": "2026-11-22"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/notes_de_gynecologie_g03_et_g04_0.pdf?m=1795530257",
+   "text": "Notes G03 et G04",
+   "kind": "Notes",
+   "year": "5ème Année",
+   "module": "Gynécologie - Obstétrique",
+   "first_seen": "2026-11-24"
+  },
+  {
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_de_gynecologie_g03_et_g04.pdf?m=1795530324",
+   "text": "CT  G01 et G02",
+   "kind": "CT",
+   "year": "5ème Année",
+   "module": "Gynécologie - Obstétrique",
+   "first_seen": "2026-11-24"
   }
  ]
 }

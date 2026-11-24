@@ -93,7 +93,18 @@
    ]
   },
   "5ème Année": {
-   "Gynécologie - Obstétrique": [],
+   "Gynécologie - Obstétrique": [
+    {
+     "kind": "Notes",
+     "text": "Notes G03 et G04",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/notes_de_gynecologie_g03_et_g04_0.pdf?m=1795530257"
+    },
+    {
+     "kind": "CT",
+     "text": "CT  G01 et G02",
+     "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/ct_de_gynecologie_g03_et_g04.pdf?m=1795530324"
+    }
+   ],
    "Unité : Appareil locomoteur": [
     {
      "kind": "Notes",
@@ -350,5 +361,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-24T09:21:14Z"
+ "scraped_at": "2026-11-24T14:26:18Z"
 }
