@@ -302,6 +302,24 @@
    "year": "6ème Année"
   },
   {
+   "kind": "Stages",
+   "text": "Terrain de stage G03",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_de_stage_de_cardiologie_g03.pdf?m=1795511930",
+   "year": "6ème Année"
+  },
+  {
+   "kind": "Stages",
+   "text": "Terrain de stage G04",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_des_stage_g04_sixieme_annee.pdf?m=1795511958",
+   "year": "6ème Année"
+  },
+  {
+   "kind": "Stages",
+   "text": "Terrain de stage G05 et G06",
+   "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_des_stage_medecine_g05_et_g06.pdf?m=1795512020",
+   "year": "6ème Année"
+  },
+  {
    "kind": "Salles",
    "text": "Répartition des salles cycle clinique du 02.11.2026",
    "url": "https://medecine.univ-batna2.dz/sites/default/files/medecine/files/repartition_des_salles_cycle_clinique_du_02.11.2026.pdf?m=1793273329",
@@ -332,5 +350,5 @@
    "year": "6ème Année"
   }
  ],
- "scraped_at": "2026-11-23T10:55:15Z"
+ "scraped_at": "2026-11-24T09:21:14Z"
 }
